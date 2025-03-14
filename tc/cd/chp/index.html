@@ -1,0 +1,2514 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Random Number Generator</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css">
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        apple: {
+                            primary: '#5D5CDE',
+                            secondary: '#34C759',
+                            tertiary: '#5856D6',
+                            danger: '#FF3B30',
+                            warning: '#FF9500',
+                            success: '#30D158',
+                            light: {
+                                bg: '#F2F2F7',
+                                card: '#FFFFFF',
+                                input: '#F9F9F9',
+                                text: '#1D1D1F'
+                            },
+                            dark: {
+                                bg: '#121212',
+                                card: '#1C1C1E',
+                                input: '#2C2C2E',
+                                text: '#F5F5F7'
+                            }
+                        }
+                    },
+                    fontFamily: {
+                        sans: ['-apple-system', 'BlinkMacSystemFont', 'San Francisco', 'Segoe UI', 'Roboto', 'Helvetica Neue', 'sans-serif']
+                    },
+                    boxShadow: {
+                        'card': '0 4px 15px rgba(0, 0, 0, 0.04)',
+                        'card-dark': '0 4px 15px rgba(0, 0, 0, 0.2)',
+                        'button': '0 4px 12px rgba(93, 92, 222, 0.25)',
+                        'button-hover': '0 6px 16px rgba(93, 92, 222, 0.3)',
+                    },
+                }
+            }
+        }
+    </script>
+    <style>
+        /* Basic Animations */
+        @keyframes popIn {
+            0% { transform: scale(0.95); opacity: 0.8; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+        .pop-in {
+            animation: popIn 0.3s ease-out forwards;
+        }
+        
+        /* Dice Animations */
+        @keyframes rollDice {
+            0% { transform: rotate(0deg) translateY(0); }
+            25% { transform: rotate(-10deg) translateY(-10px); }
+            50% { transform: rotate(0deg) translateY(-5px); }
+            75% { transform: rotate(10deg) translateY(-15px); }
+            100% { transform: rotate(0deg) translateY(0); }
+        }
+        .roll-animation {
+            animation: rollDice 0.7s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+        
+        /* Toast Notification */
+        .toast {
+            position: fixed;
+            bottom: 24px;
+            left: 50%;
+            transform: translateX(-50%) translateY(100px);
+            padding: 14px 24px;
+            border-radius: 12px;
+            z-index: 100;
+            opacity: 0;
+            transition: transform 0.5s cubic-bezier(0.19, 1, 0.22, 1), 
+                        opacity 0.3s ease-in-out;
+            box-shadow: 0 8px 20px rgba(0,0,0,0.15);
+        }
+        .toast.show {
+            opacity: 1;
+            transform: translateX(-50%) translateY(0);
+        }
+        
+        /* Custom Styles */
+        .no-tap-highlight {
+            -webkit-tap-highlight-color: transparent;
+        }
+        
+        /* Range Slider Styling */
+        input[type="range"] {
+            -webkit-appearance: none;
+            height: 6px;
+            border-radius: 5px;
+            background: #E0E0E0;
+            outline: none;
+        }
+        .dark input[type="range"] {
+            background: #3A3A3C;
+        }
+        
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 22px;
+            height: 22px;
+            border-radius: 50%; 
+            background: #5D5CDE;
+            cursor: pointer;
+            border: 3px solid white;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+        }
+        
+        .dark input[type="range"]::-webkit-slider-thumb {
+            border-color: #1C1C1E;
+        }
+        
+        input[type="range"]::-moz-range-thumb {
+            width: 22px;
+            height: 22px;
+            border-radius: 50%;
+            background: #5D5CDE;
+            cursor: pointer;
+            border: 3px solid white;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+        }
+        
+        .dark input[type="range"]::-moz-range-thumb {
+            border-color: #1C1C1E;
+        }
+        
+        /* Tabs Styling */
+        .tab-indicator {
+            position: absolute;
+            height: 3px;
+            background-color: #5D5CDE;
+            bottom: -1px;
+            transition: all 0.3s ease;
+        }
+        
+        /* Transitions */
+        .section-transition {
+            transition: opacity 0.3s ease, transform 0.3s ease;
+        }
+        
+        /* Button Gradient */
+        .btn-gradient {
+            background: linear-gradient(135deg, #5D5CDE 0%, #6F6EE7 100%);
+        }
+        
+        /* Animated Tag */
+        @keyframes tagAppear {
+            0% { transform: scale(0.8); opacity: 0; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+        .tag-animation {
+            animation: tagAppear 0.3s ease-out forwards;
+        }
+        
+        /* Dice Design */
+        .dice-face {
+            position: relative;
+            transform-style: preserve-3d;
+            transition: transform 0.3s ease;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+        }
+        
+        .dice-face:hover {
+            transform: translateY(-5px) rotate(5deg);
+        }
+        
+        /* Result Highlight */
+        @keyframes resultPulse {
+            0% { box-shadow: 0 0 0 0 rgba(93, 92, 222, 0.7); }
+            70% { box-shadow: 0 0 0 15px rgba(93, 92, 222, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(93, 92, 222, 0); }
+        }
+        .result-pulse {
+            animation: resultPulse 1.5s ease-out;
+        }
+        
+        /* Tab transitions */
+        .tab-content {
+            transition: opacity 0.2s ease-out, transform 0.2s ease-out;
+        }
+        .tab-content.hidden {
+            opacity: 0;
+            transform: translateY(10px);
+        }
+        
+        /* Collapsible sections */
+        .collapsible-content {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.3s ease-out;
+        }
+        .collapsible-content.open {
+            max-height: 800px;
+        }
+        
+        /* Gradient borders */
+        .gradient-border {
+            position: relative;
+            border-radius: 16px;
+        }
+        .gradient-border::after {
+            content: '';
+            position: absolute;
+            top: -2px;
+            left: -2px;
+            right: -2px;
+            bottom: -2px;
+            background: linear-gradient(135deg, #5D5CDE 0%, #34C759 100%);
+            border-radius: 18px;
+            z-index: -1;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+        .gradient-border:hover::after {
+            opacity: 1;
+        }
+    </style>
+</head>
+<body class="bg-apple-light-bg dark:bg-apple-dark-bg text-apple-light-text dark:text-apple-dark-text min-h-screen antialiased transition-colors duration-300">
+    <div class="container mx-auto px-4 py-6 max-w-lg">
+        <!-- Header with App Title and Theme Toggle -->
+        <header class="flex justify-between items-center mb-6">
+            <div>
+                <h1 class="text-3xl font-bold tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-apple-primary to-apple-tertiary" id="app-title">Random Generator</h1>
+                <p class="text-sm text-gray-600 dark:text-gray-400 mt-1" id="app-subtitle">Generate random numbers with precision</p>
+            </div>
+            
+            <!-- Theme Toggle -->
+            <button id="theme-toggle" class="w-12 h-12 rounded-full flex items-center justify-center bg-apple-light-card dark:bg-apple-dark-card no-tap-highlight shadow hover:shadow-lg transition-all">
+                <svg id="light-icon" class="w-6 h-6 block dark:hidden" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" />
+                </svg>
+                <svg id="dark-icon" class="w-6 h-6 hidden dark:block" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
+                </svg>
+            </button>
+        </header>
+
+        <!-- Language Selector -->
+        <div class="mb-6">
+            <select id="language-selector" class="w-full p-4 rounded-xl bg-apple-light-card dark:bg-apple-dark-card border border-gray-200 dark:border-gray-700 text-base no-tap-highlight shadow-sm transition-all focus:ring-2 focus:ring-apple-primary focus:ring-opacity-50 focus:outline-none">
+                <option value="en">English</option>
+                <option value="es">Español (Spanish)</option>
+                <option value="ko">한국어 (Korean)</option>
+                <option value="ja">日本語 (Japanese)</option>
+                <option value="zh-Hant">繁體中文 (Traditional Chinese)</option>
+                <option value="zh-Hans">简体中文 (Simplified Chinese)</option>
+                <option value="fr">Français (French)</option>
+                <option value="de">Deutsch (German)</option>
+                <option value="it">Italiano (Italian)</option>
+                <option value="pt">Português (Portuguese)</option>
+                <option value="ru">Русский (Russian)</option>
+                <option value="ar">العربية (Arabic)</option>
+                <option value="hi">हिन्दी (Hindi)</option>
+                <option value="nl">Nederlands (Dutch)</option>
+                <option value="sv">Svenska (Swedish)</option>
+            </select>
+        </div>
+
+        <!-- Main Tabs Navigation -->
+        <div class="mb-6 bg-apple-light-card dark:bg-apple-dark-card rounded-xl shadow-card dark:shadow-card-dark overflow-hidden">
+            <div class="border-b border-gray-200 dark:border-gray-700 relative">
+                <nav class="flex" aria-label="Tabs">
+                    <button id="tab-numbers" class="tab-btn relative flex-1 py-4 px-1 text-center overflow-hidden focus:outline-none font-medium text-apple-primary">
+                        <span class="relative z-10 flex items-center justify-center">
+                            <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 20l4-16m2 16l4-16M6 9h14M4 15h14"></path>
+                            </svg>
+                            <span id="tab-numbers-text">Numbers</span>
+                        </span>
+                    </button>
+                    <button id="tab-dice" class="tab-btn relative flex-1 py-4 px-1 text-center overflow-hidden focus:outline-none font-medium text-gray-500 dark:text-gray-400">
+                        <span class="relative z-10 flex items-center justify-center">
+                            <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z"></path>
+                            </svg>
+                            <span id="tab-dice-text">Dice</span>
+                        </span>
+                    </button>
+                    <button id="tab-history" class="tab-btn relative flex-1 py-4 px-1 text-center overflow-hidden focus:outline-none font-medium text-gray-500 dark:text-gray-400">
+                        <span class="relative z-10 flex items-center justify-center">
+                            <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                            </svg>
+                            <span id="tab-history-text">History</span>
+                        </span>
+                    </button>
+                    <div class="tab-indicator" style="left: 0%; width: 33.333%;"></div>
+                </nav>
+            </div>
+            
+            <!-- Numbers Tab Content -->
+            <div id="numbers-content" class="tab-content p-6">
+                <!-- Result Display -->
+                <div class="bg-gradient-to-br from-apple-primary to-apple-tertiary rounded-xl p-6 mb-6 shadow-lg text-white relative overflow-hidden">
+                    <div class="absolute top-0 left-0 w-full h-full opacity-10">
+                        <svg width="100%" height="100%" viewBox="0 0 100 100" preserveAspectRatio="none">
+                            <path d="M0,0 L100,0 L100,100 L0,100 Z" fill="none" stroke="white" stroke-width="2"></path>
+                            <path d="M0,0 L100,100 M100,0 L0,100" stroke="white" stroke-width="1"></path>
+                        </svg>
+                    </div>
+                    <div id="result-section" class="text-center py-8 relative">
+                        <p id="result-label" class="text-sm opacity-70 mb-2">Your random number</p>
+                        <div id="result" class="text-6xl font-bold mb-4 result-pulse">-</div>
+                        <div id="multi-results" class="flex flex-wrap justify-center gap-2 mb-4 hidden"></div>
+                        <button id="exclude-btn" class="mt-4 bg-white bg-opacity-20 hover:bg-opacity-30 text-white rounded-lg py-2 px-4 opacity-0 transition-opacity duration-300 no-tap-highlight hidden backdrop-blur-sm">
+                            Exclude This Number
+                        </button>
+                    </div>
+                </div>
+                
+                <!-- Number of Results Slider -->
+                <div class="mb-6">
+                    <label id="quantity-label" for="quantity" class="block mb-3 font-medium flex justify-between">
+                        <span>Number of Results</span>
+                        <span id="quantity-value" class="text-apple-primary font-bold">1</span>
+                    </label>
+                    <div class="px-1">
+                        <input type="range" id="quantity-range" min="1" max="10" value="1" class="w-full h-6 bg-gray-200 dark:bg-gray-700 rounded-lg appearance-none cursor-pointer">
+                    </div>
+                    <div class="flex justify-between text-xs text-gray-500 mt-1 px-1">
+                        <span>1</span>
+                        <span>5</span>
+                        <span>10</span>
+                    </div>
+                </div>
+                
+                <!-- Generate Button -->
+                <div class="flex space-x-2 mb-8">
+                    <button id="generate-btn" class="flex-grow btn-gradient text-white rounded-xl py-4 px-6 font-medium transition shadow-button hover:shadow-button-hover active:opacity-90 no-tap-highlight flex items-center justify-center">
+                        <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
+                        </svg>
+                        <span id="generate-btn-text">Generate</span>
+                    </button>
+                    <button id="copy-btn" class="bg-apple-light-card dark:bg-apple-dark-card border border-gray-300 dark:border-gray-600 text-apple-light-text dark:text-apple-dark-text rounded-xl py-4 px-4 font-medium transition hover:bg-gray-100 dark:hover:bg-gray-800 no-tap-highlight" aria-label="Copy to clipboard">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3" />
+                        </svg>
+                    </button>
+                </div>
+
+                <!-- Collapsible Sections -->
+                <div class="space-y-6">
+                    <!-- Inclusions Section -->
+                    <div class="bg-white dark:bg-apple-dark-card rounded-xl shadow-sm overflow-hidden">
+                        <button class="collapsible-header w-full px-5 py-4 text-left font-medium flex justify-between items-center border-b border-gray-200 dark:border-gray-700">
+                            <div class="flex items-center">
+                                <svg class="w-5 h-5 mr-2 text-apple-secondary" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
+                                </svg>
+                                <span id="inclusion-title">Included Numbers</span>
+                            </div>
+                            <svg class="chevron-icon w-5 h-5 transform transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                            </svg>
+                        </button>
+                        <div class="collapsible-content open px-5 py-4">
+                            <!-- Inclusion type selector -->
+                            <div class="mb-4 p-1 bg-gray-100 dark:bg-gray-800 rounded-lg flex">
+                                <button id="include-range-btn" class="flex-1 p-2 rounded-lg bg-white dark:bg-apple-dark-input text-apple-primary shadow font-medium transition">
+                                    <span class="flex items-center justify-center">
+                                        <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"></path>
+                                        </svg>
+                                        <span>Add Range</span>
+                                    </span>
+                                </button>
+                                <button id="include-number-btn" class="flex-1 p-2 rounded-lg font-medium transition">
+                                    <span class="flex items-center justify-center">
+                                        <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 20l4-16m2 16l4-16M6 9h14M4 15h14"></path>
+                                        </svg>
+                                        <span>Add Number</span>
+                                    </span>
+                                </button>
+                            </div>
+                            
+                            <!-- Range input (default) -->
+                            <div id="include-range-inputs" class="mb-4">
+                                <div class="grid grid-cols-2 gap-4 mb-3">
+                                    <div>
+                                        <label id="include-min-label" for="include-min" class="block text-sm mb-1 opacity-70">Minimum</label>
+                                        <input type="number" id="include-min" class="w-full p-3 rounded-lg bg-apple-light-input dark:bg-apple-dark-input border border-gray-200 dark:border-gray-700 text-base no-tap-highlight" value="1">
+                                    </div>
+                                    <div>
+                                        <label id="include-max-label" for="include-max" class="block text-sm mb-1 opacity-70">Maximum</label>
+                                        <input type="number" id="include-max" class="w-full p-3 rounded-lg bg-apple-light-input dark:bg-apple-dark-input border border-gray-200 dark:border-gray-700 text-base no-tap-highlight" value="100">
+                                    </div>
+                                </div>
+                                <button id="add-range-btn" class="w-full bg-apple-secondary text-white rounded-lg py-3 px-4 font-medium transition hover:bg-opacity-90 active:bg-opacity-80 no-tap-highlight flex items-center justify-center">
+                                    <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
+                                    </svg>
+                                    <span>Add Range</span>
+                                </button>
+                            </div>
+                            
+                            <!-- Single number input (hidden by default) -->
+                            <div id="include-number-input" class="mb-4 hidden">
+                                <div class="mb-3">
+                                    <label id="single-number-label" for="include-number" class="block text-sm mb-1 opacity-70">Number</label>
+                                    <input type="number" id="include-number" class="w-full p-3 rounded-lg bg-apple-light-input dark:bg-apple-dark-input border border-gray-200 dark:border-gray-700 text-base no-tap-highlight">
+                                </div>
+                                <button id="add-number-btn" class="w-full bg-apple-secondary text-white rounded-lg py-3 px-4 font-medium transition hover:bg-opacity-90 active:bg-opacity-80 no-tap-highlight flex items-center justify-center">
+                                    <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
+                                    </svg>
+                                    <span>Add Number</span>
+                                </button>
+                            </div>
+                            
+                            <!-- Included items display -->
+                            <div>
+                                <div id="no-inclusions-message" class="text-center py-4 text-sm opacity-70">
+                                    No included numbers yet
+                                </div>
+                                <div id="included-items" class="flex flex-wrap gap-2 mt-2"></div>
+                                <button id="clear-inclusions-btn" class="mt-4 w-full border border-gray-300 dark:border-gray-600 rounded-lg py-2 px-4 font-medium transition hover:bg-gray-100 dark:hover:bg-gray-800 hidden no-tap-highlight">
+                                    Clear All Inclusions
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Exclusions Section -->
+                    <div class="bg-white dark:bg-apple-dark-card rounded-xl shadow-sm overflow-hidden">
+                        <button class="collapsible-header w-full px-5 py-4 text-left font-medium flex justify-between items-center border-b border-gray-200 dark:border-gray-700">
+                            <div class="flex items-center">
+                                <svg class="w-5 h-5 mr-2 text-apple-danger" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                                </svg>
+                                <span id="exclusion-title">Excluded Numbers</span>
+                            </div>
+                            <svg class="chevron-icon w-5 h-5 transform transition-transform rotate-180" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                            </svg>
+                        </button>
+                        <div class="collapsible-content px-5 py-4">
+                            <!-- Exclusion type selector -->
+                            <div class="mb-4 p-1 bg-gray-100 dark:bg-gray-800 rounded-lg flex">
+                                <button id="exclude-range-btn" class="flex-1 p-2 rounded-lg bg-white dark:bg-apple-dark-input text-apple-danger shadow font-medium transition">
+                                    <span class="flex items-center justify-center">
+                                        <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"></path>
+                                        </svg>
+                                        <span>Add Range</span>
+                                    </span>
+                                </button>
+                                <button id="exclude-number-btn" class="flex-1 p-2 rounded-lg font-medium transition">
+                                    <span class="flex items-center justify-center">
+                                        <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 20l4-16m2 16l4-16M6 9h14M4 15h14"></path>
+                                        </svg>
+                                        <span>Add Number</span>
+                                    </span>
+                                </button>
+                            </div>
+                            
+                            <!-- Range exclusion input (default) -->
+                            <div id="exclude-range-inputs" class="mb-4">
+                                <div class="grid grid-cols-2 gap-4 mb-3">
+                                    <div>
+                                        <label id="exclude-min-label" for="exclude-min" class="block text-sm mb-1 opacity-70">Minimum</label>
+                                        <input type="number" id="exclude-min" class="w-full p-3 rounded-lg bg-apple-light-input dark:bg-apple-dark-input border border-gray-200 dark:border-gray-700 text-base no-tap-highlight">
+                                    </div>
+                                    <div>
+                                        <label id="exclude-max-label" for="exclude-max" class="block text-sm mb-1 opacity-70">Maximum</label>
+                                        <input type="number" id="exclude-max" class="w-full p-3 rounded-lg bg-apple-light-input dark:bg-apple-dark-input border border-gray-200 dark:border-gray-700 text-base no-tap-highlight">
+                                    </div>
+                                </div>
+                                <button id="add-exclusion-range-btn" class="w-full bg-apple-danger text-white rounded-lg py-3 px-4 font-medium transition hover:bg-opacity-90 active:bg-opacity-80 no-tap-highlight flex items-center justify-center">
+                                    <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
+                                    </svg>
+                                    <span>Add Exclusion Range</span>
+                                </button>
+                            </div>
+                            
+                            <!-- Single number exclusion input (hidden by default) -->
+                            <div id="exclude-number-input" class="mb-4 hidden">
+                                <div class="mb-3">
+                                    <label id="exclude-single-number-label" for="exclude-number" class="block text-sm mb-1 opacity-70">Number</label>
+                                    <input type="number" id="exclude-number" class="w-full p-3 rounded-lg bg-apple-light-input dark:bg-apple-dark-input border border-gray-200 dark:border-gray-700 text-base no-tap-highlight">
+                                </div>
+                                <button id="add-exclusion-number-btn" class="w-full bg-apple-danger text-white rounded-lg py-3 px-4 font-medium transition hover:bg-opacity-90 active:bg-opacity-80 no-tap-highlight flex items-center justify-center">
+                                    <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
+                                    </svg>
+                                    <span>Add Exclusion Number</span>
+                                </button>
+                            </div>
+                            
+                            <!-- Excluded items display -->
+                            <div>
+                                <div id="no-exclusions-message" class="text-center py-4 text-sm opacity-70">
+                                    No excluded numbers yet
+                                </div>
+                                <div id="excluded-items" class="flex flex-wrap gap-2 mt-2"></div>
+                                <button id="clear-exclusions-btn" class="mt-4 w-full border border-gray-300 dark:border-gray-600 rounded-lg py-2 px-4 font-medium transition hover:bg-gray-100 dark:hover:bg-gray-800 hidden no-tap-highlight">
+                                    Clear All Exclusions
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Dice Tab Content -->
+            <div id="dice-content" class="tab-content hidden p-6">
+                <!-- Dice Results Container -->
+                <div class="bg-gradient-to-br from-apple-tertiary to-apple-primary rounded-xl p-6 mb-6 shadow-lg text-white relative overflow-hidden">
+                    <div class="absolute top-0 left-0 w-full h-full opacity-10">
+                        <svg width="100%" height="100%" viewBox="0 0 100 100" preserveAspectRatio="none">
+                            <pattern id="dice-pattern" x="0" y="0" width="20" height="20" patternUnits="userSpaceOnUse">
+                                <circle cx="5" cy="5" r="1" fill="white" />
+                                <circle cx="15" cy="5" r="1" fill="white" />
+                                <circle cx="5" cy="15" r="1" fill="white" />
+                                <circle cx="15" cy="15" r="1" fill="white" />
+                                <circle cx="10" cy="10" r="1" fill="white" />
+                            </pattern>
+                            <rect x="0" y="0" width="100" height="100" fill="url(#dice-pattern)" />
+                        </svg>
+                    </div>
+                    <div id="dice-results-container" class="relative py-6 text-center">
+                        <div id="dice-results" class="flex flex-wrap justify-center gap-3 mb-4"></div>
+                        <div id="dice-total" class="text-xl font-semibold mt-4"></div>
+                    </div>
+                </div>
+                
+                <!-- Dice Controls -->
+                <div class="mb-6">
+                    <label id="dice-type-label" class="block mb-3 font-medium">Dice Type</label>
+                    <div class="grid grid-cols-3 gap-3 mb-6">
+                        <button class="dice-type p-3 rounded-xl gradient-border bg-white dark:bg-apple-dark-input border border-gray-200 dark:border-gray-700 font-medium transition hover:shadow-lg no-tap-highlight" data-value="4">D4</button>
+                        <button class="dice-type p-3 rounded-xl bg-gradient-to-r from-apple-primary to-apple-tertiary text-white font-medium transition hover:shadow-lg no-tap-highlight" data-value="6">D6</button>
+                        <button class="dice-type p-3 rounded-xl gradient-border bg-white dark:bg-apple-dark-input border border-gray-200 dark:border-gray-700 font-medium transition hover:shadow-lg no-tap-highlight" data-value="8">D8</button>
+                        <button class="dice-type p-3 rounded-xl gradient-border bg-white dark:bg-apple-dark-input border border-gray-200 dark:border-gray-700 font-medium transition hover:shadow-lg no-tap-highlight" data-value="10">D10</button>
+                        <button class="dice-type p-3 rounded-xl gradient-border bg-white dark:bg-apple-dark-input border border-gray-200 dark:border-gray-700 font-medium transition hover:shadow-lg no-tap-highlight" data-value="12">D12</button>
+                        <button class="dice-type p-3 rounded-xl gradient-border bg-white dark:bg-apple-dark-input border border-gray-200 dark:border-gray-700 font-medium transition hover:shadow-lg no-tap-highlight" data-value="20">D20</button>
+                    </div>
+                    
+                    <label id="dice-count-label" for="dice-count" class="block mb-3 font-medium flex justify-between">
+                        <span>Number of Dice</span>
+                        <span id="dice-count-value" class="text-apple-primary font-bold">1</span>
+                    </label>
+                    <div class="px-1">
+                        <input type="range" id="dice-count-range" min="1" max="10" value="1" class="w-full h-6 bg-gray-200 dark:bg-gray-700 rounded-lg appearance-none cursor-pointer">
+                    </div>
+                    <div class="flex justify-between text-xs text-gray-500 mt-1 px-1">
+                        <span>1</span>
+                        <span>5</span>
+                        <span>10</span>
+                    </div>
+                </div>
+                
+                <!-- Roll Dice Button -->
+                <div class="flex space-x-2">
+                    <button id="roll-dice-btn" class="flex-grow btn-gradient text-white rounded-xl py-4 px-6 font-medium transition shadow-button hover:shadow-button-hover active:opacity-90 no-tap-highlight flex items-center justify-center">
+                        <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
+                        </svg>
+                        <span id="roll-dice-btn-text">Roll Dice</span>
+                    </button>
+                    <button id="copy-dice-btn" class="bg-apple-light-card dark:bg-apple-dark-card border border-gray-300 dark:border-gray-600 text-apple-light-text dark:text-apple-dark-text rounded-xl py-4 px-4 font-medium transition hover:bg-gray-100 dark:hover:bg-gray-800 no-tap-highlight" aria-label="Copy to clipboard">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3" />
+                        </svg>
+                    </button>
+                </div>
+            </div>
+            
+            <!-- History Tab Content -->
+            <div id="history-content" class="tab-content hidden p-6">
+                <div class="flex justify-between items-center mb-4">
+                    <h2 id="history-title" class="font-medium">History</h2>
+                    <button id="clear-history-btn" class="text-sm text-apple-primary dark:text-apple-primary font-medium hidden hover:underline">
+                        Clear All
+                    </button>
+                </div>
+                <div id="no-history-message" class="text-center py-6 text-sm opacity-70">
+                    <svg class="w-12 h-12 mx-auto mb-2 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                    </svg>
+                    <p>No history yet</p>
+                    <p class="mt-2 text-xs">Generated numbers and dice rolls will appear here</p>
+                </div>
+                <div id="history-items" class="space-y-3"></div>
+            </div>
+        </div>
+
+        <!-- Toast Notification -->
+        <div id="toast" class="toast bg-gray-800 text-white flex items-center">
+            <svg class="w-5 h-5 mr-2 text-apple-secondary" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+            </svg>
+            <span>Copied to clipboard!</span>
+        </div>
+    </div>
+
+    <script>
+        // Language translations
+        const translations = {
+            'en': {
+                'appTitle': 'Random Generator',
+                'appSubtitle': 'Generate random numbers with precision',
+                'rangeLabel': 'Number Range',
+                'minLabel': 'Minimum',
+                'maxLabel': 'Maximum',
+                'generateBtn': 'Generate',
+                'resultLabel': 'Your random number',
+                'excludeBtn': 'Exclude This Number',
+                'exclusionTitle': 'Excluded Numbers',
+                'inclusionTitle': 'Included Numbers',
+                'addExclusionBtn': 'Add',
+                'noExclusionsMsg': 'No excluded numbers yet',
+                'noInclusionsMsg': 'No included numbers yet',
+                'clearExclusionsBtn': 'Clear All Exclusions',
+                'clearInclusionsBtn': 'Clear All Inclusions',
+                'excludeInputPlaceholder': 'Enter a number to exclude',
+                'includeInputPlaceholder': 'Enter a number to include',
+                'errorInvalidRange': 'Invalid range: Maximum must be greater than minimum',
+                'errorNoNumbersLeft': 'No numbers available in the given range after exclusions',
+                'errorInvalidNumber': 'Please enter a valid number',
+                'errorNumberOutOfRange': 'Number must be within the defined range',
+                'modeLabel': 'Generator Mode',
+                'modeNumbers': 'Numbers',
+                'modeDice': 'Dice',
+                'quantityLabel': 'Number of Results',
+                'copyBtn': 'Copy',
+                'copiedToClipboard': 'Copied to clipboard!',
+                'historyTitle': 'History',
+                'noHistoryMsg': 'No history yet',
+                'clearHistoryBtn': 'Clear All',
+                'diceTypeLabel': 'Dice Type',
+                'diceCountLabel': 'Number of Dice',
+                'rollDiceBtn': 'Roll Dice',
+                'diceResults': 'Results',
+                'diceTotal': 'Total: {0}',
+                'includeRangeBtn': 'Add Range',
+                'includeNumberBtn': 'Add Number',
+                'addRangeBtn': 'Add Range',
+                'addNumberBtn': 'Add Number',
+                'excludeRangeBtn': 'Add Range',
+                'excludeNumberBtn': 'Add Number',
+                'addExclusionRangeBtn': 'Add Exclusion Range',
+                'addExclusionNumberBtn': 'Add Exclusion Number',
+                'singleNumberLabel': 'Number',
+                'excludeSingleNumberLabel': 'Number',
+                'errorEmptyPool': 'No numbers available after applying inclusions and exclusions',
+                'tabNumbers': 'Numbers',
+                'tabDice': 'Dice',
+                'tabHistory': 'History',
+                'numberExcluded': 'Number {0} excluded',
+                'rangeIncluded': 'Range {0}-{1} included',
+                'numberIncluded': 'Number {0} included',
+                'rangeExcluded': 'Range {0}-{1} excluded',
+                'allInclusionsCleared': 'All inclusions cleared',
+                'allExclusionsCleared': 'All exclusions cleared',
+                'historyCleared': 'History cleared'
+            },
+            'es': {
+                'appTitle': 'Generador Aleatorio',
+                'appSubtitle': 'Genera números aleatorios con precisión',
+                'rangeLabel': 'Rango de Números',
+                'minLabel': 'Mínimo',
+                'maxLabel': 'Máximo',
+                'generateBtn': 'Generar',
+                'resultLabel': 'Tu número aleatorio',
+                'excludeBtn': 'Excluir Este Número',
+                'exclusionTitle': 'Números Excluidos',
+                'inclusionTitle': 'Números Incluidos',
+                'addExclusionBtn': 'Añadir',
+                'noExclusionsMsg': 'Aún no hay números excluidos',
+                'noInclusionsMsg': 'Aún no hay números incluidos',
+                'clearExclusionsBtn': 'Borrar Todas las Exclusiones',
+                'clearInclusionsBtn': 'Borrar Todas las Inclusiones',
+                'excludeInputPlaceholder': 'Ingresa un número para excluir',
+                'includeInputPlaceholder': 'Ingresa un número para incluir',
+                'errorInvalidRange': 'Rango inválido: El máximo debe ser mayor que el mínimo',
+                'errorNoNumbersLeft': 'No hay números disponibles en el rango dado después de las exclusiones',
+                'errorInvalidNumber': 'Por favor ingresa un número válido',
+                'errorNumberOutOfRange': 'El número debe estar dentro del rango definido',
+                'modeLabel': 'Modo de Generación',
+                'modeNumbers': 'Números',
+                'modeDice': 'Dados',
+                'quantityLabel': 'Número de Resultados',
+                'copyBtn': 'Copiar',
+                'copiedToClipboard': '¡Copiado al portapapeles!',
+                'historyTitle': 'Historial',
+                'noHistoryMsg': 'No hay historial aún',
+                'clearHistoryBtn': 'Borrar Todo',
+                'diceTypeLabel': 'Tipo de Dado',
+                'diceCountLabel': 'Número de Dados',
+                'rollDiceBtn': 'Lanzar Dados',
+                'diceResults': 'Resultados',
+                'diceTotal': 'Total: {0}',
+                'includeRangeBtn': 'Añadir Rango',
+                'includeNumberBtn': 'Añadir Número',
+                'addRangeBtn': 'Añadir Rango',
+                'addNumberBtn': 'Añadir Número',
+                'excludeRangeBtn': 'Añadir Rango',
+                'excludeNumberBtn': 'Añadir Número',
+                'addExclusionRangeBtn': 'Añadir Rango de Exclusión',
+                'addExclusionNumberBtn': 'Añadir Número de Exclusión',
+                'singleNumberLabel': 'Número',
+                'excludeSingleNumberLabel': 'Número',
+                'errorEmptyPool': 'No hay números disponibles después de aplicar inclusiones y exclusiones',
+                'tabNumbers': 'Números',
+                'tabDice': 'Dados',
+                'tabHistory': 'Historial',
+                'numberExcluded': 'Número {0} excluido',
+                'rangeIncluded': 'Rango {0}-{1} incluido',
+                'numberIncluded': 'Número {0} incluido',
+                'rangeExcluded': 'Rango {0}-{1} excluido',
+                'allInclusionsCleared': 'Todas las inclusiones borradas',
+                'allExclusionsCleared': 'Todas las exclusiones borradas',
+                'historyCleared': 'Historial borrado'
+            },
+            'ko': {
+                'appTitle': '랜덤 생성기',
+                'appSubtitle': '정밀한 랜덤 숫자 생성',
+                'rangeLabel': '숫자 범위',
+                'minLabel': '최소값',
+                'maxLabel': '최대값',
+                'generateBtn': '생성',
+                'resultLabel': '생성된 랜덤 숫자',
+                'excludeBtn': '이 숫자 제외',
+                'exclusionTitle': '제외된 숫자',
+                'inclusionTitle': '포함된 숫자',
+                'addExclusionBtn': '추가',
+                'noExclusionsMsg': '제외된 숫자가 없습니다',
+                'noInclusionsMsg': '포함된 숫자가 없습니다',
+                'clearExclusionsBtn': '모든 제외 항목 지우기',
+                'clearInclusionsBtn': '모든 포함 항목 지우기',
+                'excludeInputPlaceholder': '제외할 숫자 입력',
+                'includeInputPlaceholder': '포함할 숫자 입력',
+                'errorInvalidRange': '유효하지 않은 범위: 최대값이 최소값보다 커야 합니다',
+                'errorNoNumbersLeft': '제외 후 지정된 범위에서 사용 가능한 숫자가 없습니다',
+                'errorInvalidNumber': '유효한 숫자를 입력하세요',
+                'errorNumberOutOfRange': '정의된 범위 내의 숫자여야 합니다',
+                'modeLabel': '생성 모드',
+                'modeNumbers': '숫자',
+                'modeDice': '주사위',
+                'quantityLabel': '결과 수',
+                'copyBtn': '복사',
+                'copiedToClipboard': '클립보드에 복사되었습니다!',
+                'historyTitle': '기록',
+                'noHistoryMsg': '기록이 없습니다',
+                'clearHistoryBtn': '모두 지우기',
+                'diceTypeLabel': '주사위 유형',
+                'diceCountLabel': '주사위 개수',
+                'rollDiceBtn': '주사위 굴리기',
+                'diceResults': '결과',
+                'diceTotal': '합계: {0}',
+                'includeRangeBtn': '범위 추가',
+                'includeNumberBtn': '숫자 추가',
+                'addRangeBtn': '범위 추가',
+                'addNumberBtn': '숫자 추가',
+                'excludeRangeBtn': '범위 추가',
+                'excludeNumberBtn': '숫자 추가',
+                'addExclusionRangeBtn': '제외 범위 추가',
+                'addExclusionNumberBtn': '제외 숫자 추가',
+                'singleNumberLabel': '숫자',
+                'excludeSingleNumberLabel': '숫자',
+                'errorEmptyPool': '포함 및 제외 적용 후 사용 가능한 숫자가 없습니다',
+                'tabNumbers': '숫자',
+                'tabDice': '주사위',
+                'tabHistory': '기록',
+                'numberExcluded': '숫자 {0} 제외됨',
+                'rangeIncluded': '범위 {0}-{1} 포함됨',
+                'numberIncluded': '숫자 {0} 포함됨',
+                'rangeExcluded': '범위 {0}-{1} 제외됨',
+                'allInclusionsCleared': '모든 포함 항목이 지워졌습니다',
+                'allExclusionsCleared': '모든 제외 항목이 지워졌습니다',
+                'historyCleared': '기록이 지워졌습니다'
+            },
+            'ja': {
+                'appTitle': 'ランダム生成ツール',
+                'appSubtitle': '精密なランダム数値生成',
+                'rangeLabel': '数値範囲',
+                'minLabel': '最小値',
+                'maxLabel': '最大値',
+                'generateBtn': '生成',
+                'resultLabel': 'あなたのランダムな数字',
+                'excludeBtn': 'この数値を除外',
+                'exclusionTitle': '除外された数値',
+                'inclusionTitle': '含まれる数値',
+                'addExclusionBtn': '追加',
+                'noExclusionsMsg': 'まだ除外された数値はありません',
+                'noInclusionsMsg': 'まだ含まれる数値はありません',
+                'clearExclusionsBtn': 'すべての除外をクリア',
+                'clearInclusionsBtn': 'すべての包含をクリア',
+                'excludeInputPlaceholder': '除外する数値を入力',
+                'includeInputPlaceholder': '含める数値を入力',
+                'errorInvalidRange': '無効な範囲：最大値は最小値より大きくなければなりません',
+                'errorNoNumbersLeft': '除外後、指定された範囲で利用可能な数値がありません',
+                'errorInvalidNumber': '有効な数値を入力してください',
+                'errorNumberOutOfRange': '定義された範囲内の数値である必要があります',
+                'modeLabel': '生成モード',
+                'modeNumbers': '数字',
+                'modeDice': 'サイコロ',
+                'quantityLabel': '結果の数',
+                'copyBtn': 'コピー',
+                'copiedToClipboard': 'クリップボードにコピーしました！',
+                'historyTitle': '履歴',
+                'noHistoryMsg': 'まだ履歴はありません',
+                'clearHistoryBtn': 'すべてクリア',
+                'diceTypeLabel': 'サイコロの種類',
+                'diceCountLabel': 'サイコロの数',
+                'rollDiceBtn': 'サイコロを振る',
+                'diceResults': '結果',
+                'diceTotal': '合計: {0}',
+                'includeRangeBtn': '範囲を追加',
+                'includeNumberBtn': '数値を追加',
+                'addRangeBtn': '範囲を追加',
+                'addNumberBtn': '数値を追加',
+                'excludeRangeBtn': '範囲を追加',
+                'excludeNumberBtn': '数値を追加',
+                'addExclusionRangeBtn': '除外範囲を追加',
+                'addExclusionNumberBtn': '除外数値を追加',
+                'singleNumberLabel': '数値',
+                'excludeSingleNumberLabel': '数値',
+                'errorEmptyPool': '包含と除外を適用した後、使用可能な数値がありません',
+                'tabNumbers': '数字',
+                'tabDice': 'サイコロ',
+                'tabHistory': '履歴',
+                'numberExcluded': '数値 {0} が除外されました',
+                'rangeIncluded': '範囲 {0}-{1} が含まれました',
+                'numberIncluded': '数値 {0} が含まれました',
+                'rangeExcluded': '範囲 {0}-{1} が除外されました',
+                'allInclusionsCleared': 'すべての包含がクリアされました',
+                'allExclusionsCleared': 'すべての除外がクリアされました',
+                'historyCleared': '履歴がクリアされました'
+            },
+            'zh-Hant': {
+                'appTitle': '隨機生成器',
+                'appSubtitle': '精確生成隨機數字',
+                'rangeLabel': '數字範圍',
+                'minLabel': '最小值',
+                'maxLabel': '最大值',
+                'generateBtn': '生成',
+                'resultLabel': '您的隨機數字',
+                'excludeBtn': '排除此數字',
+                'exclusionTitle': '已排除的數字',
+                'inclusionTitle': '已包含的數字',
+                'addExclusionBtn': '新增',
+                'noExclusionsMsg': '尚未有排除的數字',
+                'noInclusionsMsg': '尚未有包含的數字',
+                'clearExclusionsBtn': '清除所有排除項',
+                'clearInclusionsBtn': '清除所有包含項',
+                'excludeInputPlaceholder': '輸入要排除的數字',
+                'includeInputPlaceholder': '輸入要包含的數字',
+                'errorInvalidRange': '無效範圍：最大值必須大於最小值',
+                'errorNoNumbersLeft': '排除後，給定範圍內沒有可用的數字',
+                'errorInvalidNumber': '請輸入有效的數字',
+                'errorNumberOutOfRange': '數字必須在定義的範圍內',
+                'modeLabel': '生成模式',
+                'modeNumbers': '數字',
+                'modeDice': '骰子',
+                'quantityLabel': '結果數量',
+                'copyBtn': '複製',
+                'copiedToClipboard': '已複製到剪貼簿！',
+                'historyTitle': '歷史記錄',
+                'noHistoryMsg': '暫無歷史記錄',
+                'clearHistoryBtn': '全部清除',
+                'diceTypeLabel': '骰子類型',
+                'diceCountLabel': '骰子數量',
+                'rollDiceBtn': '擲骰子',
+                'diceResults': '結果',
+                'diceTotal': '總計: {0}',
+                'includeRangeBtn': '新增範圍',
+                'includeNumberBtn': '新增數字',
+                'addRangeBtn': '新增範圍',
+                'addNumberBtn': '新增數字',
+                'excludeRangeBtn': '新增範圍',
+                'excludeNumberBtn': '新增數字',
+                'addExclusionRangeBtn': '新增排除範圍',
+                'addExclusionNumberBtn': '新增排除數字',
+                'singleNumberLabel': '數字',
+                'excludeSingleNumberLabel': '數字',
+                'errorEmptyPool': '套用包含和排除後沒有可用的數字',
+                'tabNumbers': '數字',
+                'tabDice': '骰子',
+                'tabHistory': '歷史',
+                'numberExcluded': '已排除數字 {0}',
+                'rangeIncluded': '已包含範圍 {0}-{1}',
+                'numberIncluded': '已包含數字 {0}',
+                'rangeExcluded': '已排除範圍 {0}-{1}',
+                'allInclusionsCleared': '已清除所有包含項',
+                'allExclusionsCleared': '已清除所有排除項',
+                'historyCleared': '已清除歷史記錄'
+            },
+            'zh-Hans': {
+                'appTitle': '随机生成器',
+                'appSubtitle': '精确生成随机数字',
+                'rangeLabel': '数字范围',
+                'minLabel': '最小值',
+                'maxLabel': '最大值',
+                'generateBtn': '生成',
+                'resultLabel': '您的随机数字',
+                'excludeBtn': '排除此数字',
+                'exclusionTitle': '已排除的数字',
+                'inclusionTitle': '已包含的数字',
+                'addExclusionBtn': '添加',
+                'noExclusionsMsg': '暂无排除的数字',
+                'noInclusionsMsg': '暂无包含的数字',
+                'clearExclusionsBtn': '清除所有排除项',
+                'clearInclusionsBtn': '清除所有包含项',
+                'excludeInputPlaceholder': '输入要排除的数字',
+                'includeInputPlaceholder': '输入要包含的数字',
+                'errorInvalidRange': '无效范围：最大值必须大于最小值',
+                'errorNoNumbersLeft': '排除后，给定范围内没有可用的数字',
+                'errorInvalidNumber': '请输入有效的数字',
+                'errorNumberOutOfRange': '数字必须在定义的范围内',
+                'modeLabel': '生成模式',
+                'modeNumbers': '数字',
+                'modeDice': '骰子',
+                'quantityLabel': '结果数量',
+                'copyBtn': '复制',
+                'copiedToClipboard': '已复制到剪贴板！',
+                'historyTitle': '历史记录',
+                'noHistoryMsg': '暂无历史记录',
+                'clearHistoryBtn': '全部清除',
+                'diceTypeLabel': '骰子类型',
+                'diceCountLabel': '骰子数量',
+                'rollDiceBtn': '掷骰子',
+                'diceResults': '结果',
+                'diceTotal': '总计: {0}',
+                'includeRangeBtn': '添加范围',
+                'includeNumberBtn': '添加数字',
+                'addRangeBtn': '添加范围',
+                'addNumberBtn': '添加数字',
+                'excludeRangeBtn': '添加范围',
+                'excludeNumberBtn': '添加数字',
+                'addExclusionRangeBtn': '添加排除范围',
+                'addExclusionNumberBtn': '添加排除数字',
+                'singleNumberLabel': '数字',
+                'excludeSingleNumberLabel': '数字',
+                'errorEmptyPool': '应用包含和排除后没有可用的数字',
+                'tabNumbers': '数字',
+                'tabDice': '骰子',
+                'tabHistory': '历史',
+                'numberExcluded': '已排除数字 {0}',
+                'rangeIncluded': '已包含范围 {0}-{1}',
+                'numberIncluded': '已包含数字 {0}',
+                'rangeExcluded': '已排除范围 {0}-{1}',
+                'allInclusionsCleared': '已清除所有包含项',
+                'allExclusionsCleared': '已清除所有排除项',
+                'historyCleared': '已清除历史记录'
+            },
+            'fr': {
+                'appTitle': 'Générateur Aléatoire',
+                'appSubtitle': 'Générez des nombres aléatoires avec précision',
+                'rangeLabel': 'Plage de Nombres',
+                'minLabel': 'Minimum',
+                'maxLabel': 'Maximum',
+                'generateBtn': 'Générer',
+                'resultLabel': 'Votre nombre aléatoire',
+                'excludeBtn': 'Exclure Ce Nombre',
+                'exclusionTitle': 'Nombres Exclus',
+                'inclusionTitle': 'Nombres Inclus',
+                'addExclusionBtn': 'Ajouter',
+                'noExclusionsMsg': 'Aucun nombre exclu pour le moment',
+                'noInclusionsMsg': 'Aucun nombre inclus pour le moment',
+                'clearExclusionsBtn': 'Effacer Toutes les Exclusions',
+                'clearInclusionsBtn': 'Effacer Toutes les Inclusions',
+                'excludeInputPlaceholder': 'Entrez un nombre à exclure',
+                'includeInputPlaceholder': 'Entrez un nombre à inclure',
+                'errorInvalidRange': 'Plage invalide : Le maximum doit être supérieur au minimum',
+                'errorNoNumbersLeft': 'Aucun nombre disponible dans la plage donnée après exclusions',
+                'errorInvalidNumber': 'Veuillez entrer un nombre valide',
+                'errorNumberOutOfRange': 'Le nombre doit être dans la plage définie',
+                'modeLabel': 'Mode de Génération',
+                'modeNumbers': 'Nombres',
+                'modeDice': 'Dés',
+                'quantityLabel': 'Nombre de Résultats',
+                'copyBtn': 'Copier',
+                'copiedToClipboard': 'Copié dans le presse-papiers !',
+                'historyTitle': 'Historique',
+                'noHistoryMsg': 'Pas encore d\'historique',
+                'clearHistoryBtn': 'Tout Effacer',
+                'diceTypeLabel': 'Type de Dé',
+                'diceCountLabel': 'Nombre de Dés',
+                'rollDiceBtn': 'Lancer les Dés',
+                'diceResults': 'Résultats',
+                'diceTotal': 'Total: {0}',
+                'includeRangeBtn': 'Ajouter Plage',
+                'includeNumberBtn': 'Ajouter Nombre',
+                'addRangeBtn': 'Ajouter Plage',
+                'addNumberBtn': 'Ajouter Nombre',
+                'excludeRangeBtn': 'Ajouter Plage',
+                'excludeNumberBtn': 'Ajouter Nombre',
+                'addExclusionRangeBtn': 'Ajouter Plage d\'Exclusion',
+                'addExclusionNumberBtn': 'Ajouter Nombre d\'Exclusion',
+                'singleNumberLabel': 'Nombre',
+                'excludeSingleNumberLabel': 'Nombre',
+                'errorEmptyPool': 'Aucun nombre disponible après application des inclusions et exclusions',
+                'tabNumbers': 'Nombres',
+                'tabDice': 'Dés',
+                'tabHistory': 'Historique',
+                'numberExcluded': 'Nombre {0} exclu',
+                'rangeIncluded': 'Plage {0}-{1} incluse',
+                'numberIncluded': 'Nombre {0} inclus',
+                'rangeExcluded': 'Plage {0}-{1} exclue',
+                'allInclusionsCleared': 'Toutes les inclusions effacées',
+                'allExclusionsCleared': 'Toutes les exclusions effacées',
+                'historyCleared': 'Historique effacé'
+            },
+            'de': {
+                'appTitle': 'Zufallsgenerator',
+                'appSubtitle': 'Generieren Sie Zufallszahlen mit Präzision',
+                'rangeLabel': 'Zahlenbereich',
+                'minLabel': 'Minimum',
+                'maxLabel': 'Maximum',
+                'generateBtn': 'Generieren',
+                'resultLabel': 'Ihre Zufallszahl',
+                'excludeBtn': 'Diese Zahl ausschließen',
+                'exclusionTitle': 'Ausgeschlossene Zahlen',
+                'inclusionTitle': 'Eingeschlossene Zahlen',
+                'addExclusionBtn': 'Hinzufügen',
+                'noExclusionsMsg': 'Noch keine Zahlen ausgeschlossen',
+                'noInclusionsMsg': 'Noch keine Zahlen eingeschlossen',
+                'clearExclusionsBtn': 'Alle Ausschlüsse löschen',
+                'clearInclusionsBtn': 'Alle Einschlüsse löschen',
+                'excludeInputPlaceholder': 'Geben Sie eine auszuschließende Zahl ein',
+                'includeInputPlaceholder': 'Geben Sie eine einzuschließende Zahl ein',
+                'errorInvalidRange': 'Ungültiger Bereich: Maximum muss größer als Minimum sein',
+                'errorNoNumbersLeft': 'Keine Zahlen im angegebenen Bereich nach Ausschlüssen verfügbar',
+                'errorInvalidNumber': 'Bitte geben Sie eine gültige Zahl ein',
+                'errorNumberOutOfRange': 'Die Zahl muss innerhalb des definierten Bereichs liegen',
+                'modeLabel': 'Generator-Modus',
+                'modeNumbers': 'Zahlen',
+                'modeDice': 'Würfel',
+                'quantityLabel': 'Anzahl der Ergebnisse',
+                'copyBtn': 'Kopieren',
+                'copiedToClipboard': 'In die Zwischenablage kopiert!',
+                'historyTitle': 'Verlauf',
+                'noHistoryMsg': 'Noch kein Verlauf',
+                'clearHistoryBtn': 'Alles Löschen',
+                'diceTypeLabel': 'Würfeltyp',
+                'diceCountLabel': 'Anzahl der Würfel',
+                'rollDiceBtn': 'Würfeln',
+                'diceResults': 'Ergebnisse',
+                'diceTotal': 'Gesamt: {0}',
+                'includeRangeBtn': 'Bereich hinzufügen',
+                'includeNumberBtn': 'Zahl hinzufügen',
+                'addRangeBtn': 'Bereich hinzufügen',
+                'addNumberBtn': 'Zahl hinzufügen',
+                'excludeRangeBtn': 'Bereich hinzufügen',
+                'excludeNumberBtn': 'Zahl hinzufügen',
+                'addExclusionRangeBtn': 'Ausschlussbereich hinzufügen',
+                'addExclusionNumberBtn': 'Ausschlusszahl hinzufügen',
+                'singleNumberLabel': 'Zahl',
+                'excludeSingleNumberLabel': 'Zahl',
+                'errorEmptyPool': 'Nach Anwendung von Einschlüssen und Ausschlüssen keine Zahlen verfügbar',
+                'tabNumbers': 'Zahlen',
+                'tabDice': 'Würfel',
+                'tabHistory': 'Verlauf',
+                'numberExcluded': 'Zahl {0} ausgeschlossen',
+                'rangeIncluded': 'Bereich {0}-{1} eingeschlossen',
+                'numberIncluded': 'Zahl {0} eingeschlossen',
+                'rangeExcluded': 'Bereich {0}-{1} ausgeschlossen',
+                'allInclusionsCleared': 'Alle Einschlüsse gelöscht',
+                'allExclusionsCleared': 'Alle Ausschlüsse gelöscht',
+                'historyCleared': 'Verlauf gelöscht'
+            },
+            'it': {
+                'appTitle': 'Generatore Casuale',
+                'appSubtitle': 'Genera numeri casuali con precisione',
+                'rangeLabel': 'Intervallo di Numeri',
+                'minLabel': 'Minimo',
+                'maxLabel': 'Massimo',
+                'generateBtn': 'Genera',
+                'resultLabel': 'Il tuo numero casuale',
+                'excludeBtn': 'Escludi Questo Numero',
+                'exclusionTitle': 'Numeri Esclusi',
+                'inclusionTitle': 'Numeri Inclusi',
+                'addExclusionBtn': 'Aggiungi',
+                'noExclusionsMsg': 'Nessun numero escluso ancora',
+                'noInclusionsMsg': 'Nessun numero incluso ancora',
+                'clearExclusionsBtn': 'Cancella Tutte le Esclusioni',
+                'clearInclusionsBtn': 'Cancella Tutte le Inclusioni',
+                'excludeInputPlaceholder': 'Inserisci un numero da escludere',
+                'includeInputPlaceholder': 'Inserisci un numero da includere',
+                'errorInvalidRange': 'Intervallo non valido: Il massimo deve essere maggiore del minimo',
+                'errorNoNumbersLeft': 'Nessun numero disponibile nell\'intervallo dato dopo le esclusioni',
+                'errorInvalidNumber': 'Inserisci un numero valido',
+                'errorNumberOutOfRange': 'Il numero deve essere all\'interno dell\'intervallo definito',
+                'modeLabel': 'Modalità di Generazione',
+                'modeNumbers': 'Numeri',
+                'modeDice': 'Dadi',
+                'quantityLabel': 'Numero di Risultati',
+                'copyBtn': 'Copia',
+                'copiedToClipboard': 'Copiato negli appunti!',
+                'historyTitle': 'Cronologia',
+                'noHistoryMsg': 'Nessuna cronologia ancora',
+                'clearHistoryBtn': 'Cancella Tutto',
+                'diceTypeLabel': 'Tipo di Dado',
+                'diceCountLabel': 'Numero di Dadi',
+                'rollDiceBtn': 'Lancia Dadi',
+                'diceResults': 'Risultati',
+                'diceTotal': 'Totale: {0}',
+                'includeRangeBtn': 'Aggiungi Intervallo',
+                'includeNumberBtn': 'Aggiungi Numero',
+                'addRangeBtn': 'Aggiungi Intervallo',
+                'addNumberBtn': 'Aggiungi Numero',
+                'excludeRangeBtn': 'Aggiungi Intervallo',
+                'excludeNumberBtn': 'Aggiungi Numero',
+                'addExclusionRangeBtn': 'Aggiungi Intervallo di Esclusione',
+                'addExclusionNumberBtn': 'Aggiungi Numero di Esclusione',
+                'singleNumberLabel': 'Numero',
+                'excludeSingleNumberLabel': 'Numero',
+                'errorEmptyPool': 'Nessun numero disponibile dopo l\'applicazione di inclusioni ed esclusioni',
+                'tabNumbers': 'Numeri',
+                'tabDice': 'Dadi',
+                'tabHistory': 'Cronologia',
+                'numberExcluded': 'Numero {0} escluso',
+                'rangeIncluded': 'Intervallo {0}-{1} incluso',
+                'numberIncluded': 'Numero {0} incluso',
+                'rangeExcluded': 'Intervallo {0}-{1} escluso',
+                'allInclusionsCleared': 'Tutte le inclusioni cancellate',
+                'allExclusionsCleared': 'Tutte le esclusioni cancellate',
+                'historyCleared': 'Cronologia cancellata'
+            },
+            'pt': {
+                'appTitle': 'Gerador Aleatório',
+                'appSubtitle': 'Gere números aleatórios com precisão',
+                'rangeLabel': 'Intervalo de Números',
+                'minLabel': 'Mínimo',
+                'maxLabel': 'Máximo',
+                'generateBtn': 'Gerar',
+                'resultLabel': 'Seu número aleatório',
+                'excludeBtn': 'Excluir Este Número',
+                'exclusionTitle': 'Números Excluídos',
+                'inclusionTitle': 'Números Incluídos',
+                'addExclusionBtn': 'Adicionar',
+                'noExclusionsMsg': 'Ainda não há números excluídos',
+                'noInclusionsMsg': 'Ainda não há números incluídos',
+                'clearExclusionsBtn': 'Limpar Todas as Exclusões',
+                'clearInclusionsBtn': 'Limpar Todas as Inclusões',
+                'excludeInputPlaceholder': 'Digite um número para excluir',
+                'includeInputPlaceholder': 'Digite um número para incluir',
+                'errorInvalidRange': 'Intervalo inválido: O máximo deve ser maior que o mínimo',
+                'errorNoNumbersLeft': 'Nenhum número disponível no intervalo dado após exclusões',
+                'errorInvalidNumber': 'Por favor, digite um número válido',
+                'errorNumberOutOfRange': 'O número deve estar dentro do intervalo definido',
+                'modeLabel': 'Modo de Geração',
+                'modeNumbers': 'Números',
+                'modeDice': 'Dados',
+                'quantityLabel': 'Número de Resultados',
+                'copyBtn': 'Copiar',
+                'copiedToClipboard': 'Copiado para a área de transferência!',
+                'historyTitle': 'Histórico',
+                'noHistoryMsg': 'Nenhum histórico ainda',
+                'clearHistoryBtn': 'Limpar Tudo',
+                'diceTypeLabel': 'Tipo de Dado',
+                'diceCountLabel': 'Número de Dados',
+                'rollDiceBtn': 'Rolar Dados',
+                'diceResults': 'Resultados',
+                'diceTotal': 'Total: {0}',
+                'includeRangeBtn': 'Adicionar Intervalo',
+                'includeNumberBtn': 'Adicionar Número',
+                'addRangeBtn': 'Adicionar Intervalo',
+                'addNumberBtn': 'Adicionar Número',
+                'excludeRangeBtn': 'Adicionar Intervalo',
+                'excludeNumberBtn': 'Adicionar Número',
+                'addExclusionRangeBtn': 'Adicionar Intervalo de Exclusão',
+                'addExclusionNumberBtn': 'Adicionar Número de Exclusão',
+                'singleNumberLabel': 'Número',
+                'excludeSingleNumberLabel': 'Número',
+                'errorEmptyPool': 'Nenhum número disponível após aplicar inclusões e exclusões',
+                'tabNumbers': 'Números',
+                'tabDice': 'Dados',
+                'tabHistory': 'Histórico',
+                'numberExcluded': 'Número {0} excluído',
+                'rangeIncluded': 'Intervalo {0}-{1} incluído',
+                'numberIncluded': 'Número {0} incluído',
+                'rangeExcluded': 'Intervalo {0}-{1} excluído',
+                'allInclusionsCleared': 'Todas as inclusões limpas',
+                'allExclusionsCleared': 'Todas as exclusões limpas',
+                'historyCleared': 'Histórico limpo'
+            },
+            'ru': {
+                'appTitle': 'Генератор Случайных Чисел',
+                'appSubtitle': 'Генерируйте случайные числа с точностью',
+                'rangeLabel': 'Диапазон Чисел',
+                'minLabel': 'Минимум',
+                'maxLabel': 'Максимум',
+                'generateBtn': 'Сгенерировать',
+                'resultLabel': 'Ваше случайное число',
+                'excludeBtn': 'Исключить Это Число',
+                'exclusionTitle': 'Исключенные Числа',
+                'inclusionTitle': 'Включенные Числа',
+                'addExclusionBtn': 'Добавить',
+                'noExclusionsMsg': 'Пока нет исключенных чисел',
+                'noInclusionsMsg': 'Пока нет включенных чисел',
+                'clearExclusionsBtn': 'Очистить Все Исключения',
+                'clearInclusionsBtn': 'Очистить Все Включения',
+                'excludeInputPlaceholder': 'Введите число для исключения',
+                'includeInputPlaceholder': 'Введите число для включения',
+                'errorInvalidRange': 'Недопустимый диапазон: Максимум должен быть больше минимума',
+                'errorNoNumbersLeft': 'Нет доступных чисел в заданном диапазоне после исключений',
+                'errorInvalidNumber': 'Пожалуйста, введите действительное число',
+                'errorNumberOutOfRange': 'Число должно быть в пределах определенного диапазона',
+                'modeLabel': 'Режим Генератора',
+                'modeNumbers': 'Числа',
+                'modeDice': 'Кости',
+                'quantityLabel': 'Количество Результатов',
+                'copyBtn': 'Копировать',
+                'copiedToClipboard': 'Скопировано в буфер обмена!',
+                'historyTitle': 'История',
+                'noHistoryMsg': 'Пока нет истории',
+                'clearHistoryBtn': 'Очистить Всё',
+                'diceTypeLabel': 'Тип Костей',
+                'diceCountLabel': 'Количество Костей',
+                'rollDiceBtn': 'Бросить Кости',
+                'diceResults': 'Результаты',
+                'diceTotal': 'Итого: {0}',
+                'includeRangeBtn': 'Добавить Диапазон',
+                'includeNumberBtn': 'Добавить Число',
+                'addRangeBtn': 'Добавить Диапазон',
+                'addNumberBtn': 'Добавить Число',
+                'excludeRangeBtn': 'Добавить Диапазон',
+                'excludeNumberBtn': 'Добавить Число',
+                'addExclusionRangeBtn': 'Добавить Диапазон Исключений',
+                'addExclusionNumberBtn': 'Добавить Число Исключения',
+                'singleNumberLabel': 'Число',
+                'excludeSingleNumberLabel': 'Число',
+                'errorEmptyPool': 'Нет доступных чисел после применения включений и исключений',
+                'tabNumbers': 'Числа',
+                'tabDice': 'Кости',
+                'tabHistory': 'История',
+                'numberExcluded': 'Число {0} исключено',
+                'rangeIncluded': 'Диапазон {0}-{1} включен',
+                'numberIncluded': 'Число {0} включено',
+                'rangeExcluded': 'Диапазон {0}-{1} исключен',
+                'allInclusionsCleared': 'Все включения очищены',
+                'allExclusionsCleared': 'Все исключения очищены',
+                'historyCleared': 'История очищена'
+            },
+            'ar': {
+                'appTitle': 'مولد الأرقام العشوائية',
+                'appSubtitle': 'توليد أرقام عشوائية بدقة',
+                'rangeLabel': 'نطاق الأرقام',
+                'minLabel': 'الحد الأدنى',
+                'maxLabel': 'الحد الأقصى',
+                'generateBtn': 'توليد',
+                'resultLabel': 'الرقم العشوائي الخاص بك',
+                'excludeBtn': 'استبعاد هذا الرقم',
+                'exclusionTitle': 'الأرقام المستبعدة',
+                'inclusionTitle': 'الأرقام المضمنة',
+                'addExclusionBtn': 'إضافة',
+                'noExclusionsMsg': 'لا توجد أرقام مستبعدة حتى الآن',
+                'noInclusionsMsg': 'لا توجد أرقام مضمنة حتى الآن',
+                'clearExclusionsBtn': 'مسح كل الاستبعادات',
+                'clearInclusionsBtn': 'مسح كل التضمينات',
+                'excludeInputPlaceholder': 'أدخل رقمًا للاستبعاد',
+                'includeInputPlaceholder': 'أدخل رقمًا للتضمين',
+                'errorInvalidRange': 'نطاق غير صالح: يجب أن يكون الحد الأقصى أكبر من الحد الأدنى',
+                'errorNoNumbersLeft': 'لا توجد أرقام متاحة في النطاق المحدد بعد الاستبعادات',
+                'errorInvalidNumber': 'الرجاء إدخال رقم صالح',
+                'errorNumberOutOfRange': 'يجب أن يكون الرقم ضمن النطاق المحدد',
+                'modeLabel': 'وضع التوليد',
+                'modeNumbers': 'الأرقام',
+                'modeDice': 'النرد',
+                'quantityLabel': 'عدد النتائج',
+                'copyBtn': 'نسخ',
+                'copiedToClipboard': 'تم النسخ إلى الحافظة!',
+                'historyTitle': 'السجل',
+                'noHistoryMsg': 'لا يوجد سجل بعد',
+                'clearHistoryBtn': 'مسح الكل',
+                'diceTypeLabel': 'نوع النرد',
+                'diceCountLabel': 'عدد النرد',
+                'rollDiceBtn': 'رمي النرد',
+                'diceResults': 'النتائج',
+                'diceTotal': 'المجموع: {0}',
+                'includeRangeBtn': 'إضافة نطاق',
+                'includeNumberBtn': 'إضافة رقم',
+                'addRangeBtn': 'إضافة نطاق',
+                'addNumberBtn': 'إضافة رقم',
+                'excludeRangeBtn': 'إضافة نطاق',
+                'excludeNumberBtn': 'إضافة رقم',
+                'addExclusionRangeBtn': 'إضافة نطاق استبعاد',
+                'addExclusionNumberBtn': 'إضافة رقم استبعاد',
+                'singleNumberLabel': 'رقم',
+                'excludeSingleNumberLabel': 'رقم',
+                'errorEmptyPool': 'لا توجد أرقام متاحة بعد تطبيق التضمينات والاستبعادات',
+                'tabNumbers': 'الأرقام',
+                'tabDice': 'النرد',
+                'tabHistory': 'السجل',
+                'numberExcluded': 'تم استبعاد الرقم {0}',
+                'rangeIncluded': 'تم تضمين النطاق {0}-{1}',
+                'numberIncluded': 'تم تضمين الرقم {0}',
+                'rangeExcluded': 'تم استبعاد النطاق {0}-{1}',
+                'allInclusionsCleared': 'تم مسح جميع التضمينات',
+                'allExclusionsCleared': 'تم مسح جميع الاستبعادات',
+                'historyCleared': 'تم مسح السجل'
+            },
+            'hi': {
+                'appTitle': 'यादृच्छिक जनरेटर',
+                'appSubtitle': 'सटीकता के साथ यादृच्छिक संख्याएँ उत्पन्न करें',
+                'rangeLabel': 'संख्या सीमा',
+                'minLabel': 'न्यूनतम',
+                'maxLabel': 'अधिकतम',
+                'generateBtn': 'उत्पन्न करें',
+                'resultLabel': 'आपकी यादृच्छिक संख्या',
+                'excludeBtn': 'इस संख्या को बाहर करें',
+                'exclusionTitle': 'बहिष्कृत संख्याएँ',
+                'inclusionTitle': 'शामिल संख्याएँ',
+                'addExclusionBtn': 'जोड़ें',
+                'noExclusionsMsg': 'अभी तक कोई बहिष्कृत संख्या नहीं',
+                'noInclusionsMsg': 'अभी तक कोई शामिल संख्या नहीं',
+                'clearExclusionsBtn': 'सभी बहिष्करण साफ करें',
+                'clearInclusionsBtn': 'सभी समावेश साफ करें',
+                'excludeInputPlaceholder': 'बाहर करने के लिए एक संख्या दर्ज करें',
+                'includeInputPlaceholder': 'शामिल करने के लिए एक संख्या दर्ज करें',
+                'errorInvalidRange': 'अमान्य सीमा: अधिकतम न्यूनतम से अधिक होना चाहिए',
+                'errorNoNumbersLeft': 'बहिष्करण के बाद दी गई सीमा में कोई संख्या उपलब्ध नहीं है',
+                'errorInvalidNumber': 'कृपया एक वैध संख्या दर्ज करें',
+                'errorNumberOutOfRange': 'संख्या परिभाषित सीमा के भीतर होनी चाहिए',
+                'modeLabel': 'जनरेटर मोड',
+                'modeNumbers': 'संख्याएँ',
+                'modeDice': 'पासा',
+                'quantityLabel': 'परिणामों की संख्या',
+                'copyBtn': 'कॉपी करें',
+                'copiedToClipboard': 'क्लिपबोर्ड पर कॉपी किया गया!',
+                'historyTitle': 'इतिहास',
+                'noHistoryMsg': 'अभी तक कोई इतिहास नहीं',
+                'clearHistoryBtn': 'सभी साफ़ करें',
+                'diceTypeLabel': 'पासा प्रकार',
+                'diceCountLabel': 'पासों की संख्या',
+                'rollDiceBtn': 'पासा फेंकें',
+                'diceResults': 'परिणाम',
+                'diceTotal': 'कुल: {0}',
+                'includeRangeBtn': 'सीमा जोड़ें',
+                'includeNumberBtn': 'संख्या जोड़ें',
+                'addRangeBtn': 'सीमा जोड़ें',
+                'addNumberBtn': 'संख्या जोड़ें',
+                'excludeRangeBtn': 'सीमा जोड़ें',
+                'excludeNumberBtn': 'संख्या जोड़ें',
+                'addExclusionRangeBtn': 'बहिष्करण सीमा जोड़ें',
+                'addExclusionNumberBtn': 'बहिष्करण संख्या जोड़ें',
+                'singleNumberLabel': 'संख्या',
+                'excludeSingleNumberLabel': 'संख्या',
+                'errorEmptyPool': 'समावेश और बहिष्करण लागू करने के बाद कोई संख्या उपलब्ध नहीं',
+                'tabNumbers': 'संख्याएँ',
+                'tabDice': 'पासा',
+                'tabHistory': 'इतिहास',
+                'numberExcluded': 'संख्या {0} बहिष्कृत की गई',
+                'rangeIncluded': 'सीमा {0}-{1} शामिल की गई',
+                'numberIncluded': 'संख्या {0} शामिल की गई',
+                'rangeExcluded': 'सीमा {0}-{1} बहिष्कृत की गई',
+                'allInclusionsCleared': 'सभी समावेश साफ़ किए गए',
+                'allExclusionsCleared': 'सभी बहिष्करण साफ़ किए गए',
+                'historyCleared': 'इतिहास साफ़ किया गया'
+            },
+            'nl': {
+                'appTitle': 'Willekeurige Generator',
+                'appSubtitle': 'Genereer willekeurige getallen met precisie',
+                'rangeLabel': 'Getalbereik',
+                'minLabel': 'Minimum',
+                'maxLabel': 'Maximum',
+                'generateBtn': 'Genereren',
+                'resultLabel': 'Uw willekeurige getal',
+                'excludeBtn': 'Dit Getal Uitsluiten',
+                'exclusionTitle': 'Uitgesloten Getallen',
+                'inclusionTitle': 'Inbegrepen Getallen',
+                'addExclusionBtn': 'Toevoegen',
+                'noExclusionsMsg': 'Nog geen uitgesloten getallen',
+                'noInclusionsMsg': 'Nog geen inbegrepen getallen',
+                'clearExclusionsBtn': 'Alle Uitsluitingen Wissen',
+                'clearInclusionsBtn': 'Alle Insluitingen Wissen',
+                'excludeInputPlaceholder': 'Voer een getal in om uit te sluiten',
+                'includeInputPlaceholder': 'Voer een getal in om op te nemen',
+                'errorInvalidRange': 'Ongeldig bereik: Maximum moet groter zijn dan minimum',
+                'errorNoNumbersLeft': 'Geen getallen beschikbaar in het gegeven bereik na uitsluitingen',
+                'errorInvalidNumber': 'Voer een geldig getal in',
+                'errorNumberOutOfRange': 'Getal moet binnen het gedefinieerde bereik vallen',
+                'modeLabel': 'Generator Modus',
+                'modeNumbers': 'Getallen',
+                'modeDice': 'Dobbelstenen',
+                'quantityLabel': 'Aantal Resultaten',
+                'copyBtn': 'Kopiëren',
+                'copiedToClipboard': 'Gekopieerd naar klembord!',
+                'historyTitle': 'Geschiedenis',
+                'noHistoryMsg': 'Nog geen geschiedenis',
+                'clearHistoryBtn': 'Alles Wissen',
+                'diceTypeLabel': 'Dobbelsteen Type',
+                'diceCountLabel': 'Aantal Dobbelstenen',
+                'rollDiceBtn': 'Dobbelstenen Gooien',
+                'diceResults': 'Resultaten',
+                'diceTotal': 'Totaal: {0}',
+                'includeRangeBtn': 'Bereik Toevoegen',
+                'includeNumberBtn': 'Getal Toevoegen',
+                'addRangeBtn': 'Bereik Toevoegen',
+                'addNumberBtn': 'Getal Toevoegen',
+                'excludeRangeBtn': 'Bereik Toevoegen',
+                'excludeNumberBtn': 'Getal Toevoegen',
+                'addExclusionRangeBtn': 'Uitsluitingsbereik Toevoegen',
+                'addExclusionNumberBtn': 'Uitsluitingsgetal Toevoegen',
+                'singleNumberLabel': 'Getal',
+                'excludeSingleNumberLabel': 'Getal',
+                'errorEmptyPool': 'Geen getallen beschikbaar na het toepassen van insluitingen en uitsluitingen',
+                'tabNumbers': 'Getallen',
+                'tabDice': 'Dobbelstenen',
+                'tabHistory': 'Geschiedenis',
+                'numberExcluded': 'Getal {0} uitgesloten',
+                'rangeIncluded': 'Bereik {0}-{1} opgenomen',
+                'numberIncluded': 'Getal {0} opgenomen',
+                'rangeExcluded': 'Bereik {0}-{1} uitgesloten',
+                'allInclusionsCleared': 'Alle insluitingen gewist',
+                'allExclusionsCleared': 'Alle uitsluitingen gewist',
+                'historyCleared': 'Geschiedenis gewist'
+            },
+            'sv': {
+                'appTitle': 'Slumpgenerator',
+                'appSubtitle': 'Generera slumptal med precision',
+                'rangeLabel': 'Talintervall',
+                'minLabel': 'Minimum',
+                'maxLabel': 'Maximum',
+                'generateBtn': 'Generera',
+                'resultLabel': 'Ditt slumptal',
+                'excludeBtn': 'Exkludera Detta Tal',
+                'exclusionTitle': 'Exkluderade Tal',
+                'inclusionTitle': 'Inkluderade Tal',
+                'addExclusionBtn': 'Lägg till',
+                'noExclusionsMsg': 'Inga exkluderade tal ännu',
+                'noInclusionsMsg': 'Inga inkluderade tal ännu',
+                'clearExclusionsBtn': 'Rensa Alla Exkluderingar',
+                'clearInclusionsBtn': 'Rensa Alla Inkluderingar',
+                'excludeInputPlaceholder': 'Ange ett tal att exkludera',
+                'includeInputPlaceholder': 'Ange ett tal att inkludera',
+                'errorInvalidRange': 'Ogiltigt intervall: Maximum måste vara större än minimum',
+                'errorNoNumbersLeft': 'Inga tal tillgängliga i det angivna intervallet efter exkluderingar',
+                'errorInvalidNumber': 'Vänligen ange ett giltigt tal',
+                'errorNumberOutOfRange': 'Talet måste vara inom det definierade intervallet',
+                'modeLabel': 'Generatorläge',
+                'modeNumbers': 'Tal',
+                'modeDice': 'Tärningar',
+                'quantityLabel': 'Antal Resultat',
+                'copyBtn': 'Kopiera',
+                'copiedToClipboard': 'Kopierad till urklipp!',
+                'historyTitle': 'Historik',
+                'noHistoryMsg': 'Ingen historik ännu',
+                'clearHistoryBtn': 'Rensa Allt',
+                'diceTypeLabel': 'Tärningstyp',
+                'diceCountLabel': 'Antal Tärningar',
+                'rollDiceBtn': 'Kasta Tärningar',
+                'diceResults': 'Resultat',
+                'diceTotal': 'Summa: {0}',
+                'includeRangeBtn': 'Lägg till Intervall',
+                'includeNumberBtn': 'Lägg till Tal',
+                'addRangeBtn': 'Lägg till Intervall',
+                'addNumberBtn': 'Lägg till Tal',
+                'excludeRangeBtn': 'Lägg till Intervall',
+                'excludeNumberBtn': 'Lägg till Tal',
+                'addExclusionRangeBtn': 'Lägg till Exkluderingsintervall',
+                'addExclusionNumberBtn': 'Lägg till Exkluderingstal',
+                'singleNumberLabel': 'Tal',
+                'excludeSingleNumberLabel': 'Tal',
+                'errorEmptyPool': 'Inga tal tillgängliga efter att ha applicerat inkluderingar och exkluderingar',
+                'tabNumbers': 'Tal',
+                'tabDice': 'Tärningar',
+                'tabHistory': 'Historik',
+                'numberExcluded': 'Tal {0} exkluderat',
+                'rangeIncluded': 'Intervall {0}-{1} inkluderat',
+                'numberIncluded': 'Tal {0} inkluderat',
+                'rangeExcluded': 'Intervall {0}-{1} exkluderat',
+                'allInclusionsCleared': 'Alla inkluderingar rensade',
+                'allExclusionsCleared': 'Alla exkluderingar rensade',
+                'historyCleared': 'Historik rensad'
+            }
+        };
+
+        // Helper function to apply translation
+        function applyTranslation(lang) {
+            const translation = translations[lang] || translations['en'];
+            
+            // Header
+            document.getElementById('app-title').textContent = translation.appTitle;
+            document.getElementById('app-subtitle').textContent = translation.appSubtitle;
+            
+            // Tabs
+            document.getElementById('tab-numbers-text').textContent = translation.tabNumbers;
+            document.getElementById('tab-dice-text').textContent = translation.tabDice;
+            document.getElementById('tab-history-text').textContent = translation.tabHistory;
+            
+            // Numbers Tab
+            document.getElementById('generate-btn-text').textContent = translation.generateBtn;
+            document.getElementById('result-label').textContent = translation.resultLabel;
+            document.getElementById('quantity-label').textContent = translation.quantityLabel;
+            document.getElementById('exclude-btn').textContent = translation.excludeBtn;
+            
+            // Inclusions
+            document.getElementById('inclusion-title').textContent = translation.inclusionTitle;
+            document.getElementById('include-range-btn').querySelector('span').textContent = translation.includeRangeBtn;
+            document.getElementById('include-number-btn').querySelector('span').textContent = translation.includeNumberBtn;
+            document.getElementById('include-min-label').textContent = translation.minLabel;
+            document.getElementById('include-max-label').textContent = translation.maxLabel;
+            document.getElementById('add-range-btn').querySelector('span').textContent = translation.addRangeBtn;
+            document.getElementById('single-number-label').textContent = translation.singleNumberLabel;
+            document.getElementById('add-number-btn').querySelector('span').textContent = translation.addNumberBtn;
+            document.getElementById('no-inclusions-message').textContent = translation.noInclusionsMsg;
+            document.getElementById('clear-inclusions-btn').textContent = translation.clearInclusionsBtn;
+            
+            // Exclusions
+            document.getElementById('exclusion-title').textContent = translation.exclusionTitle;
+            document.getElementById('exclude-range-btn').querySelector('span').textContent = translation.excludeRangeBtn;
+            document.getElementById('exclude-number-btn').querySelector('span').textContent = translation.excludeNumberBtn;
+            document.getElementById('exclude-min-label').textContent = translation.minLabel;
+            document.getElementById('exclude-max-label').textContent = translation.maxLabel;
+            document.getElementById('add-exclusion-range-btn').querySelector('span').textContent = translation.addExclusionRangeBtn;
+            document.getElementById('exclude-single-number-label').textContent = translation.excludeSingleNumberLabel;
+            document.getElementById('add-exclusion-number-btn').querySelector('span').textContent = translation.addExclusionNumberBtn;
+            document.getElementById('no-exclusions-message').textContent = translation.noExclusionsMsg;
+            document.getElementById('clear-exclusions-btn').textContent = translation.clearExclusionsBtn;
+            
+            // Dice tab
+            document.getElementById('dice-type-label').textContent = translation.diceTypeLabel;
+            document.getElementById('dice-count-label').textContent = translation.diceCountLabel;
+            document.getElementById('roll-dice-btn-text').textContent = translation.rollDiceBtn;
+            
+            // History tab
+            document.getElementById('history-title').textContent = translation.historyTitle;
+            document.getElementById('no-history-message').querySelector('p').textContent = translation.noHistoryMsg;
+            document.getElementById('clear-history-btn').textContent = translation.clearHistoryBtn;
+            
+            // Toast
+            document.getElementById('toast').querySelector('span').textContent = translation.copiedToClipboard;
+        }
+
+        // App state
+        let includedItems = []; // Array of objects: {type: 'range', min: X, max: Y} or {type: 'number', value: Z}
+        let excludedItems = []; // Same structure as includedItems
+        let currentNumbers = [];
+        let currentLanguage = 'en';
+        let generatorMode = 'numbers'; // 'numbers' or 'dice'
+        let selectedDiceType = 6; // Default to D6
+        let history = [];
+        let diceResults = [];
+        let activeTab = 'numbers'; // 'numbers', 'dice', or 'history'
+
+        // DOM elements - Tabs
+        const tabButtons = document.querySelectorAll('.tab-btn');
+        const tabContents = document.querySelectorAll('.tab-content');
+        const tabIndicator = document.querySelector('.tab-indicator');
+        
+        // DOM elements - Number mode
+        const generateBtn = document.getElementById('generate-btn');
+        const resultDisplay = document.getElementById('result');
+        const multiResultsDisplay = document.getElementById('multi-results');
+        const quantityRange = document.getElementById('quantity-range');
+        const quantityValue = document.getElementById('quantity-value');
+        const excludeBtn = document.getElementById('exclude-btn');
+        
+        // DOM elements - Inclusions
+        const includeRangeBtn = document.getElementById('include-range-btn');
+        const includeNumberBtn = document.getElementById('include-number-btn');
+        const includeRangeInputs = document.getElementById('include-range-inputs');
+        const includeNumberInput = document.getElementById('include-number-input');
+        const includeMin = document.getElementById('include-min');
+        const includeMax = document.getElementById('include-max');
+        const includeNumber = document.getElementById('include-number');
+        const addRangeBtn = document.getElementById('add-range-btn');
+        const addNumberBtn = document.getElementById('add-number-btn');
+        const includedItemsDisplay = document.getElementById('included-items');
+        const noInclusionsMessage = document.getElementById('no-inclusions-message');
+        const clearInclusionsBtn = document.getElementById('clear-inclusions-btn');
+        
+        // DOM elements - Exclusions
+        const excludeRangeBtn = document.getElementById('exclude-range-btn');
+        const excludeNumberBtn = document.getElementById('exclude-number-btn');
+        const excludeRangeInputs = document.getElementById('exclude-range-inputs');
+        const excludeNumberInput = document.getElementById('exclude-number-input');
+        const excludeMin = document.getElementById('exclude-min');
+        const excludeMax = document.getElementById('exclude-max');
+        const excludeNumber = document.getElementById('exclude-number');
+        const addExclusionRangeBtn = document.getElementById('add-exclusion-range-btn');
+        const addExclusionNumberBtn = document.getElementById('add-exclusion-number-btn');
+        const excludedItemsDisplay = document.getElementById('excluded-items');
+        const noExclusionsMessage = document.getElementById('no-exclusions-message');
+        const clearExclusionsBtn = document.getElementById('clear-exclusions-btn');
+
+        // DOM elements - Collapsible sections
+        const collapsibleHeaders = document.querySelectorAll('.collapsible-header');
+        
+        // DOM elements - Dice
+        const diceResultsContainer = document.getElementById('dice-results-container');
+        const diceResultsDisplay = document.getElementById('dice-results');
+        const diceTotalDisplay = document.getElementById('dice-total');
+        const diceTypeButtons = document.querySelectorAll('.dice-type');
+        const diceCountRange = document.getElementById('dice-count-range');
+        const diceCountValue = document.getElementById('dice-count-value');
+        const rollDiceBtn = document.getElementById('roll-dice-btn');
+        
+        // DOM elements - General
+        const languageSelector = document.getElementById('language-selector');
+        const themeToggle = document.getElementById('theme-toggle');
+        const copyBtn = document.getElementById('copy-btn');
+        const copyDiceBtn = document.getElementById('copy-dice-btn');
+        const historyItems = document.getElementById('history-items');
+        const noHistoryMessage = document.getElementById('no-history-message');
+        const clearHistoryBtn = document.getElementById('clear-history-btn');
+        const toast = document.getElementById('toast');
+
+        // Set up dark mode
+        function initTheme() {
+            if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+                document.documentElement.classList.add('dark');
+            }
+            window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', event => {
+                if (event.matches) {
+                    document.documentElement.classList.add('dark');
+                } else {
+                    document.documentElement.classList.remove('dark');
+                }
+            });
+        }
+
+        // Tab switching function
+        function switchTab(tab) {
+            // Update activeTab
+            activeTab = tab;
+            
+            // Update tab buttons
+            tabButtons.forEach(button => {
+                if (button.id === `tab-${tab}`) {
+                    button.classList.add('text-apple-primary');
+                    button.classList.remove('text-gray-500', 'dark:text-gray-400');
+                } else {
+                    button.classList.remove('text-apple-primary');
+                    button.classList.add('text-gray-500', 'dark:text-gray-400');
+                }
+            });
+            
+            // Update tab indicator position
+            const activeButton = document.getElementById(`tab-${tab}`);
+            const tabIndex = Array.from(tabButtons).findIndex(btn => btn === activeButton);
+            
+            // Move the indicator
+            tabIndicator.style.left = `${tabIndex * 33.333}%`;
+            
+            // Show selected tab content
+            tabContents.forEach(content => {
+                if (content.id === `${tab}-content`) {
+                    content.classList.remove('hidden');
+                    // Add animation for appearing
+                    setTimeout(() => {
+                        content.classList.add('animate__animated', 'animate__fadeIn');
+                        setTimeout(() => {
+                            content.classList.remove('animate__animated', 'animate__fadeIn');
+                        }, 500);
+                    }, 10);
+                } else {
+                    content.classList.add('hidden');
+                }
+            });
+        }
+
+        // Toggle collapsible sections
+        function toggleCollapsible(header) {
+            const content = header.nextElementSibling;
+            const chevron = header.querySelector('.chevron-icon');
+            
+            if (content.classList.contains('open')) {
+                content.classList.remove('open');
+                chevron.classList.remove('rotate-180');
+            } else {
+                content.classList.add('open');
+                chevron.classList.add('rotate-180');
+            }
+        }
+
+        // Generate all possible numbers based on inclusion items
+        function generateNumberPool() {
+            const pool = new Set();
+            
+            // If no inclusions defined, use a default range of 1-100
+            if (includedItems.length === 0) {
+                for (let i = 1; i <= 100; i++) {
+                    pool.add(i);
+                }
+            } else {
+                // Add all numbers from the included ranges and individual numbers
+                includedItems.forEach(item => {
+                    if (item.type === 'range') {
+                        for (let i = item.min; i <= item.max; i++) {
+                            pool.add(i);
+                        }
+                    } else if (item.type === 'number') {
+                        pool.add(item.value);
+                    }
+                });
+            }
+            
+            // Remove excluded numbers
+            excludedItems.forEach(item => {
+                if (item.type === 'range') {
+                    for (let i = item.min; i <= item.max; i++) {
+                        pool.delete(i);
+                    }
+                } else if (item.type === 'number') {
+                    pool.delete(item.value);
+                }
+            });
+            
+            return Array.from(pool);
+        }
+
+        // Generate random numbers from the pool
+        function generateRandomNumbers(count) {
+            const pool = generateNumberPool();
+            
+            // Check if pool is empty
+            if (pool.length === 0) {
+                showError(translations[currentLanguage].errorEmptyPool);
+                return null;
+            }
+            
+            // Adjust count if needed
+            count = Math.min(count, pool.length);
+            
+            // Randomly select numbers from the pool
+            const results = [];
+            const usedIndices = new Set();
+            
+            while (results.length < count) {
+                const randomIndex = Math.floor(Math.random() * pool.length);
+                if (!usedIndices.has(randomIndex)) {
+                    results.push(pool[randomIndex]);
+                    usedIndices.add(randomIndex);
+                }
+            }
+            
+            return results;
+        }
+
+        // Roll dice of the specified type and count
+        function rollDice(sides, count) {
+            const results = [];
+            let total = 0;
+            
+            for (let i = 0; i < count; i++) {
+                const roll = Math.floor(Math.random() * sides) + 1;
+                results.push(roll);
+                total += roll;
+            }
+            
+            return {
+                rolls: results,
+                total: total
+            };
+        }
+
+        // Show toast notification
+        function showToast(message) {
+            const toastContent = toast.querySelector('span');
+            toastContent.textContent = message || translations[currentLanguage].copiedToClipboard;
+            toast.classList.add('show');
+            setTimeout(() => {
+                toast.classList.remove('show');
+            }, 3000);
+        }
+
+        // Show error message
+        function showError(message) {
+            resultDisplay.textContent = message;
+            resultDisplay.classList.add('text-apple-danger');
+            excludeBtn.classList.add('hidden');
+            multiResultsDisplay.classList.add('hidden');
+        }
+
+        // Clear error styling
+        function clearError() {
+            resultDisplay.classList.remove('text-apple-danger');
+        }
+
+        // Update the included items display
+        function updateIncludedItemsDisplay() {
+            includedItemsDisplay.innerHTML = '';
+            
+            if (includedItems.length === 0) {
+                noInclusionsMessage.classList.remove('hidden');
+                clearInclusionsBtn.classList.add('hidden');
+                return;
+            }
+            
+            noInclusionsMessage.classList.add('hidden');
+            clearInclusionsBtn.classList.remove('hidden');
+            
+            includedItems.forEach((item, index) => {
+                const tag = document.createElement('div');
+                tag.className = 'bg-green-100 dark:bg-green-900/30 backdrop-blur-sm text-green-800 dark:text-green-200 rounded-full px-3 py-1.5 flex items-center gap-1 group tag-animation shadow-sm';
+                
+                const icon = document.createElement('span');
+                icon.className = 'mr-1 text-green-600 dark:text-green-400';
+                
+                if (item.type === 'range') {
+                    icon.innerHTML = `
+                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"></path>
+                        </svg>
+                    `;
+                } else {
+                    icon.innerHTML = `
+                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 20l4-16m2 16l4-16M6 9h14M4 15h14"></path>
+                        </svg>
+                    `;
+                }
+                
+                const label = document.createElement('span');
+                label.className = 'font-medium';
+                if (item.type === 'range') {
+                    label.textContent = `${item.min}-${item.max}`;
+                } else {
+                    label.textContent = item.value;
+                }
+                
+                const closeButton = document.createElement('button');
+                closeButton.innerHTML = `
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                    </svg>
+                `;
+                closeButton.className = 'ml-1 p-0.5 rounded-full hover:bg-green-200 dark:hover:bg-green-800 transition-colors';
+                closeButton.onclick = (e) => {
+                    e.stopPropagation();
+                    includedItems.splice(index, 1);
+                    updateIncludedItemsDisplay();
+                };
+                
+                tag.appendChild(icon);
+                tag.appendChild(label);
+                tag.appendChild(closeButton);
+                includedItemsDisplay.appendChild(tag);
+            });
+        }
+
+        // Update the excluded items display
+        function updateExcludedItemsDisplay() {
+            excludedItemsDisplay.innerHTML = '';
+            
+            if (excludedItems.length === 0) {
+                noExclusionsMessage.classList.remove('hidden');
+                clearExclusionsBtn.classList.add('hidden');
+                return;
+            }
+            
+            noExclusionsMessage.classList.add('hidden');
+            clearExclusionsBtn.classList.remove('hidden');
+            
+            excludedItems.forEach((item, index) => {
+                const tag = document.createElement('div');
+                tag.className = 'bg-red-100 dark:bg-red-900/30 backdrop-blur-sm text-red-800 dark:text-red-200 rounded-full px-3 py-1.5 flex items-center gap-1 group tag-animation shadow-sm';
+                
+                const icon = document.createElement('span');
+                icon.className = 'mr-1 text-red-600 dark:text-red-400';
+                
+                if (item.type === 'range') {
+                    icon.innerHTML = `
+                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"></path>
+                        </svg>
+                    `;
+                } else {
+                    icon.innerHTML = `
+                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 20l4-16m2 16l4-16M6 9h14M4 15h14"></path>
+                        </svg>
+                    `;
+                }
+                
+                const label = document.createElement('span');
+                label.className = 'font-medium';
+                if (item.type === 'range') {
+                    label.textContent = `${item.min}-${item.max}`;
+                } else {
+                    label.textContent = item.value;
+                }
+                
+                const closeButton = document.createElement('button');
+                closeButton.innerHTML = `
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                    </svg>
+                `;
+                closeButton.className = 'ml-1 p-0.5 rounded-full hover:bg-red-200 dark:hover:bg-red-800 transition-colors';
+                closeButton.onclick = (e) => {
+                    e.stopPropagation();
+                    excludedItems.splice(index, 1);
+                    updateExcludedItemsDisplay();
+                };
+                
+                tag.appendChild(icon);
+                tag.appendChild(label);
+                tag.appendChild(closeButton);
+                excludedItemsDisplay.appendChild(tag);
+            });
+        }
+
+        // Update history display
+        function updateHistoryDisplay() {
+            historyItems.innerHTML = '';
+            
+            if (history.length === 0) {
+                noHistoryMessage.classList.remove('hidden');
+                clearHistoryBtn.classList.add('hidden');
+                return;
+            }
+            
+            noHistoryMessage.classList.add('hidden');
+            clearHistoryBtn.classList.remove('hidden');
+            
+            // Display most recent items first (up to 15)
+            const recentHistory = history.slice(-15).reverse();
+            
+            recentHistory.forEach(item => {
+                const historyItem = document.createElement('div');
+                historyItem.className = 'p-4 bg-white dark:bg-apple-dark-card rounded-xl border border-gray-200 dark:border-gray-700 flex items-center justify-between shadow-sm hover:shadow transition-shadow';
+                
+                const contentDiv = document.createElement('div');
+                contentDiv.className = 'flex-grow';
+                
+                const timestamp = document.createElement('div');
+                timestamp.className = 'text-xs opacity-60 mb-1';
+                timestamp.textContent = new Date(item.timestamp).toLocaleTimeString();
+                
+                const content = document.createElement('div');
+                
+                if (item.type === 'numbers') {
+                    if (item.numbers.length === 1) {
+                        content.className = 'font-medium text-lg';
+                        content.textContent = item.numbers[0];
+                    } else {
+                        content.className = 'font-medium flex flex-wrap gap-1';
+                        item.numbers.forEach(num => {
+                            const numSpan = document.createElement('span');
+                            numSpan.className = 'bg-gray-100 dark:bg-gray-800 rounded px-2 py-0.5 text-sm';
+                            numSpan.textContent = num;
+                            content.appendChild(numSpan);
+                        });
+                    }
+                } else if (item.type === 'dice') {
+                    content.className = 'font-medium';
+                    
+                    const diceInfo = document.createElement('div');
+                    diceInfo.className = 'text-sm text-gray-500 dark:text-gray-400';
+                    diceInfo.textContent = `${item.count}d${item.sides}`;
+                    
+                    const rollsDisplay = document.createElement('div');
+                    rollsDisplay.className = 'flex flex-wrap gap-1 my-1';
+                    
+                    item.rolls.forEach(roll => {
+                        const rollSpan = document.createElement('span');
+                        rollSpan.className = 'bg-apple-primary/10 dark:bg-apple-primary/20 text-apple-primary rounded-lg px-2 py-0.5 text-sm font-bold';
+                        rollSpan.textContent = roll;
+                        rollsDisplay.appendChild(rollSpan);
+                    });
+                    
+                    const totalSpan = document.createElement('div');
+                    totalSpan.className = 'text-sm font-semibold';
+                    totalSpan.textContent = `Total: ${item.total}`;
+                    
+                    content.appendChild(diceInfo);
+                    content.appendChild(rollsDisplay);
+                    content.appendChild(totalSpan);
+                }
+                
+                const copyBtn = document.createElement('button');
+                copyBtn.className = 'ml-2 text-apple-primary dark:text-apple-primary p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-full transition-colors';
+                copyBtn.innerHTML = `
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3" />
+                    </svg>
+                `;
+                copyBtn.onclick = () => {
+                    let textToCopy = '';
+                    if (item.type === 'numbers') {
+                        textToCopy = item.numbers.join(', ');
+                    } else if (item.type === 'dice') {
+                        textToCopy = `${item.count}d${item.sides}: ${item.rolls.join(', ')} = ${item.total}`;
+                    }
+                    navigator.clipboard.writeText(textToCopy).then(() => {
+                        showToast();
+                    });
+                };
+                
+                contentDiv.appendChild(timestamp);
+                contentDiv.appendChild(content);
+                historyItem.appendChild(contentDiv);
+                historyItem.appendChild(copyBtn);
+                historyItems.appendChild(historyItem);
+            });
+        }
+
+        // Switch inclusion input type
+        function switchInclusionInputType(type) {
+            if (type === 'range') {
+                includeRangeBtn.classList.add('bg-white', 'dark:bg-apple-dark-input', 'text-apple-primary', 'shadow');
+                includeRangeBtn.classList.remove('bg-transparent');
+                
+                includeNumberBtn.classList.remove('bg-white', 'dark:bg-apple-dark-input', 'text-apple-primary', 'shadow');
+                includeNumberBtn.classList.add('bg-transparent');
+                
+                includeRangeInputs.classList.remove('hidden');
+                includeNumberInput.classList.add('hidden');
+            } else {
+                includeNumberBtn.classList.add('bg-white', 'dark:bg-apple-dark-input', 'text-apple-primary', 'shadow');
+                includeNumberBtn.classList.remove('bg-transparent');
+                
+                includeRangeBtn.classList.remove('bg-white', 'dark:bg-apple-dark-input', 'text-apple-primary', 'shadow');
+                includeRangeBtn.classList.add('bg-transparent');
+                
+                includeNumberInput.classList.remove('hidden');
+                includeRangeInputs.classList.add('hidden');
+            }
+        }
+
+        // Switch exclusion input type
+        function switchExclusionInputType(type) {
+            if (type === 'range') {
+                excludeRangeBtn.classList.add('bg-white', 'dark:bg-apple-dark-input', 'text-apple-danger', 'shadow');
+                excludeRangeBtn.classList.remove('bg-transparent');
+                
+                excludeNumberBtn.classList.remove('bg-white', 'dark:bg-apple-dark-input', 'text-apple-danger', 'shadow');
+                excludeNumberBtn.classList.add('bg-transparent');
+                
+                excludeRangeInputs.classList.remove('hidden');
+                excludeNumberInput.classList.add('hidden');
+            } else {
+                excludeNumberBtn.classList.add('bg-white', 'dark:bg-apple-dark-input', 'text-apple-danger', 'shadow');
+                excludeNumberBtn.classList.remove('bg-transparent');
+                
+                excludeRangeBtn.classList.remove('bg-white', 'dark:bg-apple-dark-input', 'text-apple-danger', 'shadow');
+                excludeRangeBtn.classList.add('bg-transparent');
+                
+                excludeNumberInput.classList.remove('hidden');
+                excludeRangeInputs.classList.add('hidden');
+            }
+        }
+
+        // Set dice type
+        function setDiceType(sides) {
+            selectedDiceType = sides;
+            
+            diceTypeButtons.forEach(button => {
+                const buttonValue = parseInt(button.dataset.value);
+                
+                if (buttonValue === sides) {
+                    button.classList.add('bg-gradient-to-r', 'from-apple-primary', 'to-apple-tertiary', 'text-white');
+                    button.classList.remove('gradient-border', 'bg-white', 'dark:bg-apple-dark-input', 'border', 'border-gray-200', 'dark:border-gray-700');
+                } else {
+                    button.classList.remove('bg-gradient-to-r', 'from-apple-primary', 'to-apple-tertiary', 'text-white');
+                    button.classList.add('gradient-border', 'bg-white', 'dark:bg-apple-dark-input', 'border', 'border-gray-200', 'dark:border-gray-700');
+                }
+            });
+        }
+
+        // Display dice results
+        function displayDiceResults(results) {
+            clearError();
+            diceResultsDisplay.innerHTML = '';
+            diceResults = results.rolls;
+            
+            // Create dice elements
+            results.rolls.forEach(roll => {
+                const diceElement = document.createElement('div');
+                diceElement.className = 'dice-face w-16 h-16 rounded-lg flex items-center justify-center text-xl font-bold roll-animation bg-gradient-to-br from-white to-gray-100 dark:from-gray-700 dark:to-gray-800 text-apple-primary';
+                
+                // Add dice pattern based on value and type
+                if (selectedDiceType === 6) {
+                    // Create standard dice face for D6
+                    diceElement.innerHTML = createD6Face(roll);
+                } else {
+                    // Just show the number for other dice types
+                    diceElement.textContent = roll;
+                }
+                
+                diceResultsDisplay.appendChild(diceElement);
+            });
+            
+            const translation = translations[currentLanguage];
+            diceTotalDisplay.textContent = translation.diceTotal.replace('{0}', results.total);
+            
+            // Add to history
+            const historyItem = {
+                type: 'dice',
+                sides: selectedDiceType,
+                count: parseInt(diceCountRange.value),
+                rolls: results.rolls,
+                total: results.total,
+                timestamp: Date.now()
+            };
+            
+            history.push(historyItem);
+            updateHistoryDisplay();
+        }
+
+        // Create D6 dice face
+        function createD6Face(value) {
+            let dots = '';
+            
+            switch (value) {
+                case 1:
+                    dots = `<div class="absolute inset-0 flex items-center justify-center">
+                               <div class="w-3 h-3 rounded-full bg-apple-primary"></div>
+                           </div>`;
+                    break;
+                case 2:
+                    dots = `<div class="absolute top-3 left-3">
+                               <div class="w-2.5 h-2.5 rounded-full bg-apple-primary"></div>
+                           </div>
+                           <div class="absolute bottom-3 right-3">
+                               <div class="w-2.5 h-2.5 rounded-full bg-apple-primary"></div>
+                           </div>`;
+                    break;
+                case 3:
+                    dots = `<div class="absolute top-3 left-3">
+                               <div class="w-2.5 h-2.5 rounded-full bg-apple-primary"></div>
+                           </div>
+                           <div class="absolute inset-0 flex items-center justify-center">
+                               <div class="w-2.5 h-2.5 rounded-full bg-apple-primary"></div>
+                           </div>
+                           <div class="absolute bottom-3 right-3">
+                               <div class="w-2.5 h-2.5 rounded-full bg-apple-primary"></div>
+                           </div>`;
+                    break;
+                case 4:
+                    dots = `<div class="absolute top-3 left-3">
+                               <div class="w-2.5 h-2.5 rounded-full bg-apple-primary"></div>
+                           </div>
+                           <div class="absolute top-3 right-3">
+                               <div class="w-2.5 h-2.5 rounded-full bg-apple-primary"></div>
+                           </div>
+                           <div class="absolute bottom-3 left-3">
+                               <div class="w-2.5 h-2.5 rounded-full bg-apple-primary"></div>
+                           </div>
+                           <div class="absolute bottom-3 right-3">
+                               <div class="w-2.5 h-2.5 rounded-full bg-apple-primary"></div>
+                           </div>`;
+                    break;
+                case 5:
+                    dots = `<div class="absolute top-3 left-3">
+                               <div class="w-2.5 h-2.5 rounded-full bg-apple-primary"></div>
+                           </div>
+                           <div class="absolute top-3 right-3">
+                               <div class="w-2.5 h-2.5 rounded-full bg-apple-primary"></div>
+                           </div>
+                           <div class="absolute inset-0 flex items-center justify-center">
+                               <div class="w-2.5 h-2.5 rounded-full bg-apple-primary"></div>
+                           </div>
+                           <div class="absolute bottom-3 left-3">
+                               <div class="w-2.5 h-2.5 rounded-full bg-apple-primary"></div>
+                           </div>
+                           <div class="absolute bottom-3 right-3">
+                               <div class="w-2.5 h-2.5 rounded-full bg-apple-primary"></div>
+                           </div>`;
+                    break;
+                case 6:
+                    dots = `<div class="absolute top-3 left-3">
+                               <div class="w-2.5 h-2.5 rounded-full bg-apple-primary"></div>
+                           </div>
+                           <div class="absolute top-3 right-3">
+                               <div class="w-2.5 h-2.5 rounded-full bg-apple-primary"></div>
+                           </div>
+                           <div class="absolute left-3 top-1/2 -translate-y-1/2">
+                               <div class="w-2.5 h-2.5 rounded-full bg-apple-primary"></div>
+                           </div>
+                           <div class="absolute right-3 top-1/2 -translate-y-1/2">
+                               <div class="w-2.5 h-2.5 rounded-full bg-apple-primary"></div>
+                           </div>
+                           <div class="absolute bottom-3 left-3">
+                               <div class="w-2.5 h-2.5 rounded-full bg-apple-primary"></div>
+                           </div>
+                           <div class="absolute bottom-3 right-3">
+                               <div class="w-2.5 h-2.5 rounded-full bg-apple-primary"></div>
+                           </div>`;
+                    break;
+            }
+            
+            return dots;
+        }
+
+        // Display number results
+        function displayNumberResults(numbers) {
+            clearError();
+            if (numbers === null) return;
+            
+            multiResultsDisplay.innerHTML = '';
+            
+            currentNumbers = numbers;
+            
+            if (numbers.length === 1) {
+                // Single number display
+                resultDisplay.textContent = numbers[0];
+                resultDisplay.classList.remove('hidden');
+                resultDisplay.classList.add('result-pulse');
+                multiResultsDisplay.classList.add('hidden');
+                
+                excludeBtn.classList.remove('hidden');
+                excludeBtn.classList.remove('opacity-0');
+                excludeBtn.classList.add('opacity-100');
+                
+                // Remove pulse animation after it completes
+                setTimeout(() => {
+                    resultDisplay.classList.remove('result-pulse');
+                }, 1500);
+            } else {
+                // Multiple numbers display
+                resultDisplay.classList.add('hidden');
+                multiResultsDisplay.classList.remove('hidden');
+                
+                numbers.forEach(num => {
+                    const numElement = document.createElement('div');
+                    numElement.className = 'bg-white bg-opacity-20 backdrop-blur-sm text-white rounded-lg p-3 min-w-[3rem] text-center font-semibold text-xl roll-animation';
+                    numElement.textContent = num;
+                    multiResultsDisplay.appendChild(numElement);
+                });
+                
+                excludeBtn.classList.add('hidden');
+            }
+            
+            // Add to history
+            const historyItem = {
+                type: 'numbers',
+                numbers: numbers,
+                timestamp: Date.now()
+            };
+            
+            history.push(historyItem);
+            updateHistoryDisplay();
+        }
+
+        // Clear results display
+        function clearResults() {
+            resultDisplay.textContent = '-';
+            resultDisplay.classList.remove('hidden');
+            multiResultsDisplay.classList.add('hidden');
+            multiResultsDisplay.innerHTML = '';
+            diceResultsDisplay.innerHTML = '';
+            diceTotalDisplay.textContent = '';
+            excludeBtn.classList.add('hidden');
+            clearError();
+        }
+
+        // Validate range
+        function validateRange(min, max) {
+            if (min > max) {
+                showToast(translations[currentLanguage].errorInvalidRange);
+                return false;
+            }
+            return true;
+        }
+
+        // Format message with placeholders
+        function formatMessage(template, ...args) {
+            return template.replace(/{(\d+)}/g, (match, number) => {
+                return typeof args[number] !== 'undefined' ? args[number] : match;
+            });
+        }
+
+        // Event Listeners - Tab buttons
+        tabButtons.forEach(button => {
+            button.addEventListener('click', () => {
+                const tabName = button.id.replace('tab-', '');
+                switchTab(tabName);
+            });
+        });
+        
+        // Event Listeners - Collapsible headers
+        collapsibleHeaders.forEach(header => {
+            header.addEventListener('click', () => {
+                toggleCollapsible(header);
+            });
+        });
+        
+        // Generate button
+        generateBtn.addEventListener('click', () => {
+            clearError();
+            const quantity = parseInt(quantityRange.value);
+            const numbers = generateRandomNumbers(quantity);
+            if (numbers !== null) {
+                displayNumberResults(numbers);
+            }
+        });
+
+        // Dice roll button
+        rollDiceBtn.addEventListener('click', () => {
+            const sides = selectedDiceType;
+            const count = parseInt(diceCountRange.value);
+            const results = rollDice(sides, count);
+            displayDiceResults(results);
+        });
+
+        // Exclusion button
+        excludeBtn.addEventListener('click', () => {
+            if (currentNumbers.length === 1) {
+                excludedItems.push({type: 'number', value: currentNumbers[0]});
+                updateExcludedItemsDisplay();
+                excludeBtn.classList.remove('opacity-100');
+                excludeBtn.classList.add('opacity-0');
+                setTimeout(() => {
+                    excludeBtn.classList.add('hidden');
+                }, 300);
+                
+                // Show feedback toast
+                const message = formatMessage(translations[currentLanguage].numberExcluded, currentNumbers[0]);
+                showToast(message);
+            }
+        });
+
+        // Add inclusion range
+        addRangeBtn.addEventListener('click', () => {
+            const min = parseInt(includeMin.value);
+            const max = parseInt(includeMax.value);
+            
+            if (isNaN(min) || isNaN(max)) {
+                showToast(translations[currentLanguage].errorInvalidNumber);
+                return;
+            }
+            
+            if (!validateRange(min, max)) return;
+            
+            includedItems.push({type: 'range', min, max});
+            updateIncludedItemsDisplay();
+            
+            // Reset min-max fields to default
+            includeMin.value = "1";
+            includeMax.value = "100";
+            
+            // Show feedback toast
+            const message = formatMessage(translations[currentLanguage].rangeIncluded, min, max);
+            showToast(message);
+        });
+
+        // Add inclusion number
+        addNumberBtn.addEventListener('click', () => {
+            const value = parseInt(includeNumber.value);
+            
+            if (isNaN(value)) {
+                showToast(translations[currentLanguage].errorInvalidNumber);
+                return;
+            }
+            
+            includedItems.push({type: 'number', value});
+            includeNumber.value = '';
+            updateIncludedItemsDisplay();
+            
+            // Show feedback toast
+            const message = formatMessage(translations[currentLanguage].numberIncluded, value);
+            showToast(message);
+        });
+
+        // Add exclusion range
+        addExclusionRangeBtn.addEventListener('click', () => {
+            const min = parseInt(excludeMin.value);
+            const max = parseInt(excludeMax.value);
+            
+            if (isNaN(min) || isNaN(max)) {
+                showToast(translations[currentLanguage].errorInvalidNumber);
+                return;
+            }
+            
+            if (!validateRange(min, max)) return;
+            
+            excludedItems.push({type: 'range', min, max});
+            updateExcludedItemsDisplay();
+            
+            // Reset min-max fields
+            excludeMin.value = "";
+            excludeMax.value = "";
+            
+            // Show feedback toast
+            const message = formatMessage(translations[currentLanguage].rangeExcluded, min, max);
+            showToast(message);
+        });
+
+        // Add exclusion number
+        addExclusionNumberBtn.addEventListener('click', () => {
+            const value = parseInt(excludeNumber.value);
+            
+            if (isNaN(value)) {
+                showToast(translations[currentLanguage].errorInvalidNumber);
+                return;
+            }
+            
+            excludedItems.push({type: 'number', value});
+            excludeNumber.value = '';
+            updateExcludedItemsDisplay();
+            
+            // Show feedback toast
+            const message = formatMessage(translations[currentLanguage].numberExcluded, value);
+            showToast(message);
+        });
+
+        // Clear buttons
+        clearInclusionsBtn.addEventListener('click', () => {
+            includedItems = [];
+            updateIncludedItemsDisplay();
+            
+            // Show feedback toast
+            showToast(translations[currentLanguage].allInclusionsCleared);
+        });
+
+        clearExclusionsBtn.addEventListener('click', () => {
+            excludedItems = [];
+            updateExcludedItemsDisplay();
+            
+            // Show feedback toast
+            showToast(translations[currentLanguage].allExclusionsCleared);
+        });
+
+        clearHistoryBtn.addEventListener('click', () => {
+            history = [];
+            updateHistoryDisplay();
+            
+            // Show feedback toast
+            showToast(translations[currentLanguage].historyCleared);
+        });
+
+        // Mode switches
+        includeRangeBtn.addEventListener('click', () => {
+            switchInclusionInputType('range');
+        });
+
+        includeNumberBtn.addEventListener('click', () => {
+            switchInclusionInputType('number');
+        });
+
+        excludeRangeBtn.addEventListener('click', () => {
+            switchExclusionInputType('range');
+        });
+
+        excludeNumberBtn.addEventListener('click', () => {
+            switchExclusionInputType('number');
+        });
+
+        // Language selector
+        languageSelector.addEventListener('change', (e) => {
+            currentLanguage = e.target.value;
+            applyTranslation(currentLanguage);
+        });
+
+        // Theme toggle
+        themeToggle.addEventListener('click', () => {
+            document.documentElement.classList.toggle('dark');
+        });
+
+        // Dice type
+        diceTypeButtons.forEach(button => {
+            button.addEventListener('click', () => {
+                setDiceType(parseInt(button.dataset.value));
+            });
+        });
+
+        // Range sliders
+        quantityRange.addEventListener('input', () => {
+            quantityValue.textContent = quantityRange.value;
+        });
+
+        diceCountRange.addEventListener('input', () => {
+            diceCountValue.textContent = diceCountRange.value;
+        });
+
+        // Copy buttons
+        copyBtn.addEventListener('click', () => {
+            if (currentNumbers && currentNumbers.length > 0) {
+                navigator.clipboard.writeText(currentNumbers.join(', ')).then(() => {
+                    showToast();
+                });
+            }
+        });
+
+        copyDiceBtn.addEventListener('click', () => {
+            if (diceResults && diceResults.length > 0) {
+                const diceText = `${diceResults.join(', ')} = ${diceResults.reduce((sum, roll) => sum + roll, 0)}`;
+                navigator.clipboard.writeText(diceText).then(() => {
+                    showToast();
+                });
+            }
+        });
+
+        // Initialize the app
+        function init() {
+            initTheme();
+            updateIncludedItemsDisplay();
+            updateExcludedItemsDisplay();
+            updateHistoryDisplay();
+            applyTranslation('en');
+            switchTab('numbers');
+            switchInclusionInputType('range');
+            switchExclusionInputType('range');
+            setDiceType(6);
+        }
+
+        // Start the app
+        init();
+    </script>
+</body>
+</html>
+</body>
+</html>
